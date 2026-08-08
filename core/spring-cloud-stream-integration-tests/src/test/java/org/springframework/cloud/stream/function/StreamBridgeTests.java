@@ -47,6 +47,8 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.cloudevent.CloudEventMessageBuilder;
 import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.cloud.stream.binder.BinderHeaders;
+import org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy;
 import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
@@ -484,6 +486,31 @@ class StreamBridgeTests {
 		}
 		finally {
 			executor.shutdownNow();
+		}
+	}
+
+	// See https://github.com/spring-cloud/spring-cloud-stream/issues/3242
+	@Test
+	void test_3242() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(
+				PartitionKeyExtractorConfiguration.class)).web(WebApplicationType.NONE).run(
+			"--spring.cloud.stream.source=partitioned;nonPartitioned",
+			"--spring.cloud.stream.bindings.partitioned-out-0.producer.partition-count=7",
+			"--spring.cloud.stream.bindings.partitioned-out-0.producer.partition-key-extractor-name=partitionKeyExtractor",
+			"--spring.cloud.stream.bindings.nonPartitioned-out-0.producer.partition-count=1",
+			"--spring.jmx.enabled=false")) {
+			StreamBridge streamBridge = context.getBean(StreamBridge.class);
+
+			streamBridge.send("partitioned-out-0",
+				MessageBuilder.withPayload("partitioned").setHeader("partitionKey", "key").build());
+			streamBridge.send("nonPartitioned-out-0", MessageBuilder.withPayload("nonPartitioned").build());
+
+			OutputDestination output = context.getBean(OutputDestination.class);
+			assertThat(output.receive(1000, "partitioned-out-0").getHeaders()
+				.containsKey(BinderHeaders.PARTITION_HEADER)).isTrue();
+			assertThat(output.receive(1000, "nonPartitioned-out-0").getHeaders()
+				.containsKey(BinderHeaders.PARTITION_HEADER)).isFalse();
 		}
 	}
 
@@ -927,6 +954,16 @@ class StreamBridgeTests {
 
 	@EnableAutoConfiguration
 	public static class EmptyConfiguration {
+
+	}
+
+	@EnableAutoConfiguration
+	public static class PartitionKeyExtractorConfiguration {
+
+		@Bean
+		public PartitionKeyExtractorStrategy partitionKeyExtractor() {
+			return message -> message.getHeaders().get("partitionKey");
+		}
 
 	}
 
