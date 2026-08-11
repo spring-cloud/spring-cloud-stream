@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.UUID;
@@ -40,6 +41,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.ResolvableType;
 import org.springframework.kafka.support.serializer.JacksonJsonSerde;
+import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
+
+import tools.jackson.databind.json.JsonMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
@@ -49,6 +53,7 @@ import static org.mockito.Mockito.mock;
  * Unit tests for {@link SerdeResolverUtils}.
  *
  * @author Chris Bono
+ * @author adityaanikam
  */
 @SuppressWarnings({ "rawtypes", "unchecked" })
 class SerdeResolverUtilsTests {
@@ -156,6 +161,38 @@ class SerdeResolverUtilsTests {
 						assertThat(SerdeResolverUtils.resolveForType(context, ResolvableType.forClass(Object.class), null))
 							.isNull());
 				}
+			}
+
+			@Nested
+			class WithJsonMapperBean {
+
+				@Test
+				void usesConfiguredJsonMapperBeanWhenPresent() throws Exception {
+					new ApplicationContextRunner()
+						.withPropertyValues("spring.cloud.function.ineligible-definitions: sendToDlqAndContinue")
+						.withUserConfiguration(SerdeResolverJsonMapperTestApp.class)
+						.run((context) -> {
+							Serde<?> serde = SerdeResolverUtils.resolveForType(context, ResolvableType.forClass(Foo.class), null);
+							assertThat(serde).isInstanceOf(JacksonJsonSerde.class);
+
+							JsonMapper expectedMapper = context.getBean(JsonMapper.class);
+							JacksonJsonSerializer<?> serializer = (JacksonJsonSerializer<?>) serde.serializer();
+							Field mapperField = JacksonJsonSerializer.class.getDeclaredField("jsonMapper");
+							mapperField.setAccessible(true);
+							assertThat(mapperField.get(serializer)).isSameAs(expectedMapper);
+						});
+				}
+
+				@EnableAutoConfiguration
+				static class SerdeResolverJsonMapperTestApp {
+
+					@Bean
+					public JsonMapper customJsonMapper() {
+						return JsonMapper.builder().build();
+					}
+
+				}
+
 			}
 		}
 	}
