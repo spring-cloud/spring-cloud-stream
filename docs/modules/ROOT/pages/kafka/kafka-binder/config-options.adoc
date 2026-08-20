@@ -189,6 +189,16 @@ ackMode::
 Specify the container ack mode.
 This is based on the AckMode enumeration defined in Spring Kafka.
 If `ackEachRecord` property is set to `true` and consumer is not in batch mode, then this will use the ack mode of `RECORD`, otherwise, use the provided ack mode using this property.
+ackCount::
+The number of records that must be processed before pending offsets are committed when the `ackMode` is `COUNT` or `COUNT_TIME`.
+When set, this binding-level value takes precedence over the global `spring.kafka.listener.ackCount`.
++
+Default: not set.
+ackTime::
+The time after which pending offsets are committed when the `ackMode` is `TIME` or `COUNT_TIME`.
+When set, this binding-level value takes precedence over the global `spring.kafka.listener.ackTime`.
++
+Default: not set.
 
 autoCommitOnError::
 In pollable consumers, if set to `true`, it always auto commits on error.

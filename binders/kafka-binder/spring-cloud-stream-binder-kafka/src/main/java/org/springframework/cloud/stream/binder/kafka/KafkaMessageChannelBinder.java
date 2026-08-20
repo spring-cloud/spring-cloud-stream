@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -708,6 +709,18 @@ public class KafkaMessageChannelBinder extends
 				messageListenerContainer.getContainerProperties()
 						.setAckMode(ackMode);
 			}
+		}
+
+		// Apply binding-level ackCount and ackTime after global propagation
+		// These take precedence over global spring.kafka.listener values when explicitly set
+		KafkaConsumerProperties consumerExt = extendedConsumerProperties.getExtension();
+		Integer bindingAckCount = consumerExt.getAckCount();
+		if (bindingAckCount != null) {
+			messageListenerContainer.getContainerProperties().setAckCount(bindingAckCount);
+		}
+		Duration bindingAckTime = consumerExt.getAckTime();
+		if (bindingAckTime != null) {
+			messageListenerContainer.getContainerProperties().setAckTime(bindingAckTime.toMillis());
 		}
 
 		if (this.logger.isDebugEnabled()) {
