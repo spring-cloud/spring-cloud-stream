@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.properties;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -98,6 +99,24 @@ public class KafkaConsumerProperties {
 	 * container instead of the deprecated autoCommitOffset property.
 	 */
 	private ContainerProperties.AckMode ackMode;
+
+	/**
+	 * Consumer ack count. When set, the container will send an acknowledgment after the specified number
+	 * of messages have been consumed. Only applicable for COUNT or COUNT_TIME ack modes.
+	 * <p>
+	 * This property is binding-level and takes precedence over the global
+	 * {@code spring.kafka.listener.ackCount} when explicitly configured on the binding.
+	 */
+	private Integer ackCount;
+
+	/**
+	 * Consumer ack time. When set, the container will send an acknowledgment after the specified duration
+	 * has elapsed since the last message was consumed. Only applicable for TIME or COUNT_TIME ack modes.
+	 * <p>
+	 * This property is binding-level and takes precedence over the global
+	 * {@code spring.kafka.listener.ackTime} when explicitly configured on the binding.
+	 */
+	private Duration ackTime;
 
 	/**
 	 * Flag to enable auto commit on error in polled consumers.
@@ -221,6 +240,34 @@ public class KafkaConsumerProperties {
 
 	public void setAckMode(ContainerProperties.AckMode ackMode) {
 		this.ackMode = ackMode;
+	}
+
+	/**
+	 * @return consumer ack count, or null if not set at the binding level.
+	 * <p>
+	 * Binding-level value takes precedence over the global
+	 * {@code spring.kafka.listener.ackCount} when explicitly configured.
+	 */
+	public Integer getAckCount() {
+		return this.ackCount;
+	}
+
+	public void setAckCount(Integer ackCount) {
+		this.ackCount = ackCount;
+	}
+
+	/**
+	 * @return consumer ack time, or null if not set at the binding level.
+	 * <p>
+	 * Binding-level value takes precedence over the global
+	 * {@code spring.kafka.listener.ackTime} when explicitly configured.
+	 */
+	public Duration getAckTime() {
+		return this.ackTime;
+	}
+
+	public void setAckTime(Duration ackTime) {
+		this.ackTime = ackTime;
 	}
 
 	/**

@@ -2016,6 +2016,29 @@ class KafkaBinderTests extends
 	}
 
 	@Test
+	void bindingAckCountAndAckTimeAreAppliedToContainerProperties() {
+		Binder<MessageChannel, ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>> binder = getBinder();
+		var moduleInputChannel = new QueueChannel();
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.getExtension().setAckCount(10);
+		consumerProperties.getExtension().setAckTime(Duration.ofSeconds(5));
+
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer(
+				"testBindingAckCountAndAckTime" + UUID.randomUUID(), "test", moduleInputChannel,
+				consumerProperties);
+		try {
+			AbstractMessageListenerContainer<?, ?> container = TestUtils.getPropertyValue(
+					consumerBinding, "lifecycle.messageListenerContainer",
+					AbstractMessageListenerContainer.class);
+			assertThat(container.getContainerProperties().getAckCount()).isEqualTo(10);
+			assertThat(container.getContainerProperties().getAckTime()).isEqualTo(5000L);
+		}
+		finally {
+			consumerBinding.unbind();
+		}
+	}
+
+	@Test
 	@Override
 	@SuppressWarnings("unchecked")
 	public void testTwoRequiredGroups(TestInfo testInfo) throws Exception {
