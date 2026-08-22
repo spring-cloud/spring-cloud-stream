@@ -59,8 +59,7 @@ public abstract class RemoteApplicationEvent extends ApplicationEvent {
 
 	protected RemoteApplicationEvent(Object source, String originService, Destination destination) {
 		super(source);
-		if (!originService.equals(TRANSIENT_ORIGIN)) {
-			Assert.notNull(originService, "originService may not be null");
+		if (!TRANSIENT_ORIGIN.equals(originService)) {
 			this.originService = originService;
 		}
 		else {
