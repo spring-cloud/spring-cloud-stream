@@ -217,6 +217,14 @@ public class KafkaBinderMetrics
 					partitionInfo.partition()));
 		}
 
+		// This metadata consumer never subscribes to the topic, so without a
+		// manual assignment kafka-clients' offset-fetch response processing
+		// treats every partition as 'no longer assigned' and logs a WARN for
+		// each of them on every lag computation (GH-3208, see KAFKA-20449).
+		// Assigning the partitions keeps the client's internal subscription
+		// state consistent with our usage without affecting computed offsets.
+		metadataConsumer.assign(topicPartitions);
+
 		Map<TopicPartition, Long> endOffsets = metadataConsumer
 				.endOffsets(topicPartitions);
 

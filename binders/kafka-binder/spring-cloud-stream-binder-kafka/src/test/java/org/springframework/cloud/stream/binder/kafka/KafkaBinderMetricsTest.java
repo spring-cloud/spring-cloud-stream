@@ -347,6 +347,24 @@ class KafkaBinderMetricsTest {
 	}
 
 	@Test
+	void metadataConsumerReceivesAssignBeforeEndOffsets() {
+		List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
+		topicsInUse.put(
+			TEST_TOPIC,
+			new TopicInformation("group6-metrics", partitions, false)
+		);
+		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC))
+			.willReturn(partitions);
+		metrics.bindTo(meterRegistry);
+		meterRegistry.get(KafkaBinderMetrics.OFFSET_LAG_METRIC_NAME)
+			.tag("group", "group6-metrics").tag("topic", TEST_TOPIC).gauge().value();
+
+		org.mockito.InOrder inOrder = Mockito.inOrder(consumer);
+		inOrder.verify(consumer).assign(ArgumentMatchers.anyCollection());
+		inOrder.verify(consumer).endOffsets(ArgumentMatchers.anyCollection());
+	}
+
+	@Test
 	public void shouldShutdownSchedulerOnClose() {
 		metrics.bindTo(meterRegistry);
 		assertThat(metrics.scheduler).isNotNull();
