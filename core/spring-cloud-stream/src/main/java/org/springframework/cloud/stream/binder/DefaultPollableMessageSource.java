@@ -108,33 +108,68 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 
 	public void setSource(MessageSource<?> source) {
 		ProxyFactory pf = new ProxyFactory(source);
-		class ReceiveAdvice implements MethodInterceptor {
 
-			private final List<ChannelInterceptor> interceptors = new ArrayList<>();
+		class ReceiveAdvice implements MethodInterceptor {
 
 			@Override
 			public Object invoke(MethodInvocation invocation) throws Throwable {
-				Object result = invocation.proceed();
-				if (result instanceof Message<?> received) {
-					for (ChannelInterceptor interceptor : this.interceptors) {
-						received = interceptor.preSend(received, DUMMY_CHANNEL);
-						if (received == null) {
+				Message<?> result = null;
+				Exception completionException = null;
+				boolean preReceiveCompleted = false;
+				try {
+					for (ChannelInterceptor interceptor : interceptors()) {
+						if (!interceptor.preReceive(DUMMY_CHANNEL)) {
 							return null;
 						}
 					}
-					return received;
+					preReceiveCompleted = true;
+					Object received = invocation.proceed();
+					if (received instanceof Message<?> message) {
+						result = message;
+						for (ChannelInterceptor interceptor : interceptors()) {
+							result = interceptor.postReceive(result, DUMMY_CHANNEL);
+							if (result == null) {
+								return null;
+							}
+						}
+						for (ChannelInterceptor interceptor : interceptors()) {
+							result = interceptor.preSend(result, DUMMY_CHANNEL);
+							if (result == null) {
+								return null;
+							}
+						}
+					}
+					else {
+						result = null;
+					}
+					return result;
 				}
-				return result;
+				catch (Throwable ex) {
+					completionException = ex instanceof Exception exception ? exception
+							: new IllegalStateException(ex);
+					throw ex;
+				}
+				finally {
+					if (preReceiveCompleted) {
+						for (ChannelInterceptor interceptor : interceptors()) {
+							interceptor.afterReceiveCompletion(result, DUMMY_CHANNEL,
+									completionException);
+						}
+					}
+				}
 			}
 
 		}
-		final ReceiveAdvice advice = new ReceiveAdvice();
-		advice.interceptors.addAll(this.interceptors);
+
 		NameMatchMethodPointcutAdvisor sourceAdvisor = new NameMatchMethodPointcutAdvisor(
-				advice);
+				new ReceiveAdvice());
 		sourceAdvisor.addMethodName("receive");
 		pf.addAdvisor(sourceAdvisor);
 		this.source = (MessageSource<?>) pf.getProxy();
+	}
+
+	private List<ChannelInterceptor> interceptors() {
+		return List.copyOf(this.interceptors);
 	}
 
 	public void setRetryTemplate(RetryTemplate retryTemplate) {
@@ -211,6 +246,7 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 			ackCallback = status -> log.warn("No AcknowledgementCallback defined. Status: " + status.name() + " " + message);
 		}
 
+		Exception sendFailure = null;
 		try {
 			setAttributesIfNecessary(message);
 			if (this.retryTemplate == null) {
@@ -236,13 +272,17 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 					}
 				}
 			}
+			for (ChannelInterceptor interceptor : interceptors()) {
+				interceptor.postSend(message, DUMMY_CHANNEL, true);
+			}
 			return true;
 		}
 		catch (MessagingException e) {
+			sendFailure = e;
 			if (this.retryTemplate == null && !shouldRequeue(e)) {
 				try {
 					this.messagingTemplate.send(this.errorChannel,
-						this.errorMessageStrategy.buildErrorMessage(e, ATTRIBUTES_HOLDER.get()));
+							this.errorMessageStrategy.buildErrorMessage(e, ATTRIBUTES_HOLDER.get()));
 				}
 				catch (MessagingException e1) {
 					requeueOrNack(message, ackCallback, e1);
@@ -255,6 +295,7 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 			}
 		}
 		catch (Exception e) {
+			sendFailure = e;
 			AckUtils.autoNack(ackCallback);
 			if (e instanceof MessageHandlingException messageHandlingException &&
 				messageHandlingException.getFailedMessage().equals(message)) {
@@ -265,6 +306,10 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 		finally {
 			ATTRIBUTES_HOLDER.remove();
 			AckUtils.autoAck(ackCallback);
+			for (ChannelInterceptor interceptor : interceptors()) {
+				interceptor.afterSendCompletion(message, DUMMY_CHANNEL,
+						sendFailure == null, sendFailure);
+			}
 		}
 	}
 
