@@ -18,6 +18,9 @@ package org.springframework.cloud.stream.binder.kafka.aot;
 
 import java.util.stream.Stream;
 
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
+
 import org.springframework.aot.hint.MemberCategory;
 import org.springframework.aot.hint.ReflectionHints;
 import org.springframework.aot.hint.RuntimeHints;
@@ -47,5 +50,9 @@ public class KafkaBinderRuntimeHints implements RuntimeHintsRegistrar {
 				KafkaBindingProperties.class)
 			.forEach(type -> reflectionHints.registerType(type,
 				builder -> builder.withMembers(MemberCategory.INVOKE_DECLARED_METHODS)));
+		// KafkaBinderEnvironmentPostProcessor sets these as default (de)serializers by
+		// class name, so they are only ever resolved reflectively via Class.forName.
+		Stream.of(ByteArrayDeserializer.class, ByteArraySerializer.class)
+			.forEach(type -> reflectionHints.registerType(type, MemberCategory.INVOKE_PUBLIC_CONSTRUCTORS));
 	}
 }
