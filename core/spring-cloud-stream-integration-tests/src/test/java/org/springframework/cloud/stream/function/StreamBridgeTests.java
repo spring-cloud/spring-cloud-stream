@@ -645,6 +645,32 @@ class StreamBridgeTests {
 	}
 
 	@Test
+	void configuredBindingsAreNotRemovedWithCache() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+			.getCompleteConfiguration(InterceptorConfiguration.class))
+			.web(WebApplicationType.NONE).run(
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.dynamic-destination-cache-size=1",
+				"--spring.cloud.stream.bindings.foo-out-0.destination=fooDestination"
+			)) {
+			StreamBridge bridge = context.getBean(StreamBridge.class);
+			BindingServiceProperties bindingServiceProp = context.getBean(BindingServiceProperties.class);
+
+			bridge.send("foo-out-0", "hello foo");
+			bridge.send("a", "hello a");
+			bridge.send("b", "hello b");
+
+			// foo-out-0 was configured by the application, so cache eviction must leave
+			// its properties alone; otherwise the destination silently reverts to the
+			// binding name the next time the binding is resolved.
+			assertThat(bindingServiceProp.getBindings()).containsKey("foo-out-0");
+			assertThat(bindingServiceProp.getBindings().get("foo-out-0").getDestination())
+				.isEqualTo("fooDestination");
+			assertThat(bindingServiceProp.getBindingDestination("foo-out-0")).isEqualTo("fooDestination");
+		}
+	}
+
+	@Test
 	void withInterceptorsRegisteredOnlyOnOutputChannel() throws InterruptedException {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(GH2180Configuration.class))

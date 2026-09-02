@@ -19,6 +19,8 @@ package org.springframework.cloud.stream.function;
 import java.lang.reflect.Type;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -147,6 +149,11 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 		this.applicationContext = applicationContext;
 		this.bindingServiceProperties = bindingServiceProperties;
 		this.destinationBindingCallback = destinationBindingCallback;
+		// Binding names present before any dynamic destination is resolved are the ones
+		// the application configured itself. Evicting a channel must not discard their
+		// configuration, only that of destinations this bridge created on demand.
+		Set<String> configuredBindingNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+		configuredBindingNames.addAll(bindingServiceProperties.getBindings().keySet());
 		this.channelCache = new LinkedHashMap<String, MessageChannel>() {
 			@Override
 			protected boolean removeEldestEntry(Map.Entry<String, MessageChannel> eldest) {
@@ -155,7 +162,9 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 					if (logger.isDebugEnabled()) {
 						logger.debug("Removing message channel from cache " + eldest.getKey());
 					}
-					bindingServiceProperties.getBindings().remove(eldest.getKey());
+					if (!configuredBindingNames.contains(eldest.getKey())) {
+						bindingServiceProperties.getBindings().remove(eldest.getKey());
+					}
 					bindingService.unbindProducers(eldest.getKey());
 				}
 				return remove;
