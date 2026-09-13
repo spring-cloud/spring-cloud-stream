@@ -1,0 +1,21 @@
+spring.cloud:
+  function:
+    definition: fooSource;fooSink
+  stream:
+    default-binder: mock-binder-1
+    binders:
+      mock-binder-1:
+        type: mock
+        environment:
+          foo: bar1
+      mock-binder-2:
+        type: mock
+        environment:
+          foo: bar2
+    bindings:
+      fooSource-out-0:
+        destination: fooSink-in-0
+        binder: mock-binder-2
+      fooSink-in-0:
+        destination: fooSource-out-0
+        binder: mock-binder-2
