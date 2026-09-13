@@ -128,6 +128,45 @@ class BinderChildContextInitializerTests {
 	@Test
 	@CompileWithForkedClassLoader
 	@SuppressWarnings("unchecked")
+	void shouldStartHyphenatedBinderChildContextsFromAotContributions(CapturedOutput output) {
+
+		ApplicationContextRunner contextRunner = new ApplicationContextRunner()
+				.withConfiguration(AutoConfigurations.of(BinderFactoryAutoConfiguration.class,
+						BindingServiceConfiguration.class, FunctionConfiguration.class))
+				.withInitializer(new ConfigDataApplicationContextInitializer())
+				.withPropertyValues("spring.config.location=classpath:binder-aot-hyphen-test/")
+				.withConfiguration(UserConfigurations.of(TestFooBinderAppConfiguration.class));
+
+		contextRunner.prepare(context -> {
+			TestGenerationContext generationContext = new TestGenerationContext(TestTarget.class);
+			ClassName className = new ApplicationContextAotGenerator().processAheadOfTime(
+					(GenericApplicationContext) context.getSourceApplicationContext(), generationContext);
+			generationContext.writeGeneratedContent();
+			TestCompiler compiler = TestCompiler.forSystem();
+			compiler.with(generationContext).compile(compiled -> {
+				GenericApplicationContext freshApplicationContext = new GenericApplicationContext();
+				ApplicationContextInitializer<GenericApplicationContext> initializer = compiled
+						.getInstance(ApplicationContextInitializer.class, className.toString());
+				initializer.initialize(freshApplicationContext);
+				assertThat(output).contains("Beginning AOT processing for binder child contexts");
+				assertThat(output).contains("Pre-creating binder child context (AOT) for mock-binder-2");
+				assertThat(output).contains("Pre-creating binder child context (AOT) for mock-binder-1");
+				assertThat(output).contains("Generating AOT child context initializer for mock-binder-2");
+				assertThat(output).contains("Generating AOT child context initializer for mock-binder-1");
+
+				TestPropertyValues.of(AotDetector.AOT_ENABLED + "=true")
+						.applyToSystemProperties(freshApplicationContext::refresh);
+
+				DefaultBinderFactory binderFactory = freshApplicationContext.getBean(DefaultBinderFactory.class);
+				assertThat(binderFactory.getBinder("mock-binder-1", MessageChannel.class)).isNotNull();
+				assertThat(binderFactory.getBinder("mock-binder-2", MessageChannel.class)).isNotNull();
+			});
+		});
+	}
+
+	@Test
+	@CompileWithForkedClassLoader
+	@SuppressWarnings("unchecked")
 	void shouldStartDeclardBinderChildContextsFromAotContributions(CapturedOutput output) {
 
 		// Test description:

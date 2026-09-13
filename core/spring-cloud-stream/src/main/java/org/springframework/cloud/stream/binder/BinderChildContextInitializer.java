@@ -183,16 +183,35 @@ public class BinderChildContextInitializer implements ApplicationContextAware, B
 								ApplicationContextInitializer.class, ConfigurableApplicationContext.class, HashMap.class);
 						this.childContexts.forEach((name, context) -> {
 							this.logger.info(() -> "Generating AOT child context initializer for " + name);
-							GenerationContext childGenerationContext = generationContext.withName(name + "Binder");
+							String aotName = toAotGenerationName(name);
+							GenerationContext childGenerationContext = generationContext.withName(aotName + "Binder");
 							ClassName initializerClassName = aotGenerator.processAheadOfTime(context, childGenerationContext);
-							method.addStatement("$T<? extends $T> " + name + "Initializer = new $L()", ApplicationContextInitializer.class,
+							method.addStatement("$T<? extends $T> " + aotName + "Initializer = new $L()", ApplicationContextInitializer.class,
 									ConfigurableApplicationContext.class, initializerClassName);
-							method.addStatement("initializers.put($S," + name + "Initializer)", name);
+							method.addStatement("initializers.put($S," + aotName + "Initializer)", name);
 						});
 						method.addStatement("return instance.withChildContextInitializers(initializers)");
 					});
 			beanRegistrationCode.addInstancePostProcessor(postProcessorMethod.toMethodReference());
 		}
+	}
+
+	/**
+	 * Converts a binder name to a valid Java identifier for AOT generated code. Runtime binder
+	 * lookup continues to use the original configured name.
+	 */
+	private static String toAotGenerationName(String binderName) {
+		StringBuilder sanitized = new StringBuilder(binderName.length());
+		for (int i = 0; i < binderName.length(); i++) {
+			char character = binderName.charAt(i);
+			if (i == 0) {
+				sanitized.append(Character.isJavaIdentifierStart(character) ? character : '_');
+			}
+			else {
+				sanitized.append(Character.isJavaIdentifierPart(character) ? character : '_');
+			}
+		}
+		return sanitized.isEmpty() ? "_" : sanitized.toString();
 	}
 
 	private static class DeclaredBinders {
