@@ -521,24 +521,25 @@ This example illustrates how one may manually acknowledge offsets in a consumer 
 This example requires that `spring.cloud.stream.kafka.bindings.input.consumer.ackMode` be set to `MANUAL`.
 Use the corresponding input channel name for your example.
 
-[source]
+[source,java]
 ----
 @SpringBootApplication
 public class ManuallyAcknowdledgingConsumer {
 
- public static void main(String[] args) {
-     SpringApplication.run(ManuallyAcknowdledgingConsumer.class, args);
- }
+    public static void main(String[] args) {
+        SpringApplication.run(ManuallyAcknowdledgingConsumer.class, args);
+    }
 
- @Bean
- public Consumer<Message<?>> process() {
-    return message -> {
-        Acknowledgment acknowledgment = message.getHeaders().get(KafkaHeaders.ACKNOWLEDGMENT, Acknowledgment.class);
-        if (acknowledgment != null) {
-         System.out.println("Acknowledgment provided");
-         acknowledgment.acknowledge();
-        }
-    };
+    @Bean
+    public Consumer<Message<?>> process() {
+        return message -> {
+            Acknowledgment acknowledgment = message.getHeaders().get(KafkaHeaders.ACKNOWLEDGMENT, Acknowledgment.class);
+            if (acknowledgment != null) {
+                System.out.println("Acknowledgment provided");
+                acknowledgment.acknowledge();
+            }
+        };
+    }
 }
 ----
 
@@ -550,7 +551,7 @@ Use the `spring.cloud.stream.kafka.binder.configuration` option to set security 
 
 For example, to set `security.protocol` to `SASL_SSL`, set the following property:
 
-[source]
+[source,properties]
 ----
 spring.cloud.stream.kafka.binder.configuration.security.protocol=SASL_SSL
 ----
@@ -638,7 +639,8 @@ See this https://cwiki.apache.org/confluence/display/KAFKA/KIP-85%3A+Dynamic+JAA
 
 For example, if you have two clusters in your application with separate JAAS configuration, then the following is a template that you can use:
 
-```
+[source,yaml]
+----
 spring.cloud.stream:
     binders:
         kafka1:
@@ -665,7 +667,7 @@ spring.cloud.stream:
         configuration:
           security.protocol: SASL_PLAINTEXT
           sasl.mechanism: PLAIN
-```
+----
 
 Note that both the Kafka clusters, and the `sasl.jaas.config` values for each of them are different in the above configuration.
 
@@ -694,7 +696,6 @@ Similarly, instead of publishing dead-letter records within the transaction, thi
 
 If you wish to use transactions in a source application, or from some arbitrary thread for producer-only transaction (e.g. `@Scheduled` method), you must get a reference to the transactional producer factory and define a `KafkaTransactionManager` bean using it.
 
-====
 [source, java]
 ----
 @Bean
@@ -704,11 +705,10 @@ public PlatformTransactionManager transactionManager(BinderFactory binders,
     ProducerFactory<byte[], byte[]> pf = ((KafkaMessageChannelBinder) binders.getBinder(null,
             MessageChannel.class)).getTransactionalProducerFactory();
     KafkaTransactionManager tm = new KafkaTransactionManager<>(pf);
-    tm.setTransactionId(txId)
+    tm.setTransactionId(txId);
     return tm;
 }
 ----
-====
 
 Notice that we get a reference to the binder using the `BinderFactory`; use `null` in the first argument when there is only one binder configured.
 If more than one binder is configured, use the binder name to get the reference.
@@ -716,7 +716,6 @@ Once we have a reference to the binder, we can obtain a reference to the `Produc
 
 Then you would use normal Spring transaction support, e.g. `TransactionTemplate` or `@Transactional`, for example:
 
-====
 [source, java]
 ----
 public static class Sender {
@@ -728,7 +727,6 @@ public static class Sender {
 
 }
 ----
-====
 
 If you wish to synchronize producer-only transactions with those from some other transaction manager, use a `ChainedTransactionManager`.
 
@@ -782,7 +780,6 @@ More details on how to suppress meters selectively can be found https://micromet
 When using compacted topics, a record with a `null` value (also called a tombstone record) represents the deletion of a key.
 To receive such messages in a Spring Cloud Stream function, you can use the following strategy.
 
-====
 [source, java]
 ----
 @Bean
@@ -799,7 +796,6 @@ public Function<Message<Person>, String> myFunction() {
     };
 }
 ----
-====
 
 [[rebalance-listener]]
 === KafkaBindingRebalanceListener
@@ -807,7 +803,6 @@ public Function<Message<Person>, String> myFunction() {
 Applications may wish to seek topics/partitions to arbitrary offsets when the partitions are initially assigned, or perform other operations on the consumer.
 Starting with version 2.1, if you provide a single `KafkaBindingRebalanceListener` bean in the application context, it will be wired into all Kafka consumer bindings.
 
-====
 [source, java]
 ----
 public interface KafkaBindingRebalanceListener {
@@ -848,7 +843,6 @@ public interface KafkaBindingRebalanceListener {
 
 }
 ----
-====
 
 You cannot set the `resetOffsets` consumer property to `true` when you provide a rebalance listener.
 
@@ -867,7 +861,6 @@ There are situations where it is preferable to move this functionality to the li
 To configure moving this functionality from the binder to the container, define a `@Bean` of type `ListenerContainerWithDlqAndRetryCustomizer`.
 This interface has the following methods:
 
-====
 [source, java]
 ----
 /**
@@ -897,11 +890,10 @@ default boolean retryAndDlqInBinding(String destinationName, String group) {
     return true;
 }
 ----
-====
 
 The destination resolver and `BackOff` are created from the binding properties (if configured). The `KafkaTemplate` uses configuration from `spring.kafka....` properties. You can then use these to create a custom error handler and dead letter publisher; for example:
 
-====
+
 [source, java]
 ----
 @Bean
@@ -929,13 +921,13 @@ ListenerContainerWithDlqAndRetryCustomizer cust(KafkaTemplate<?, ?> template) {
     };
 }
 ----
-====
+
 
 Now, only a single retry delay needs to be greater than the consumer's `max.poll.interval.ms` property.
 
 When working with several binders, the 'ListenerContainerWithDlqAndRetryCustomizer' bean gets overridden by the 'DefaultBinderFactory'. For the bean
 to apply, you need to use a 'BinderCustomizer' to set the container customizer (See <<binder-customizer>>):
-====
+
 [source, java]
 ----
 @Bean
@@ -953,7 +945,7 @@ public BinderCustomizer binderCustomizer(ListenerContainerWithDlqAndRetryCustomi
     };
 }
 ----
-====
+
 
 [[consumer-producer-config-customizer]]
 === Customizing Consumer and Producer configuration
@@ -978,14 +970,15 @@ AdminClientConfigCustomizer's configure method provides access to the admin clie
 Binder's Kafka topic provisioner gives the highest precedence for the properties given through this customizer.
 Here is an example of providing this customizer bean.
 
-```
+[source,java]
+----
 @Bean
 public AdminClientConfigCustomizer adminClientConfigCustomizer() {
     return props -> {
         props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_SSL");
     };
 }
-```
+----
 
 [[custom-kafka-binder-health-indicator]]
 === Custom Kafka Binder Health Indicator
@@ -999,7 +992,8 @@ The custom implementation must be present in the application configuration as a 
 When the binder discovers the custom implementation, it will use that instead of the default implementation.
 Here is an example of such a custom implementation bean in the application.
 
-```
+[source,java]
+----
 @Bean
 public KafkaBinderHealth kafkaBinderHealthIndicator() {
     return new KafkaBinderHealth() {
@@ -1009,7 +1003,7 @@ public KafkaBinderHealth kafkaBinderHealthIndicator() {
         }
     };
 }
-```
+----
 
 [[custom-kafka-binder-health-indicator-example]]
 === Custom kafka Binder Health Indicator Example
@@ -1020,7 +1014,8 @@ In this example, we try to override the binder provided Kafka HealthIndicator by
 
 First, we need create a custom implementation of the `KafkaBinderHealth` interface.
 
-```
+[source,java]
+----
 public class KafkaBinderHealthImplementation implements KafkaBinderHealth {
     @Value("${spring.cloud.bus.destination}")
     private String topic;
@@ -1053,11 +1048,12 @@ public class KafkaBinderHealthImplementation implements KafkaBinderHealth {
 		// Your implementation
     }
 }
-```
+----
 
 Then we need to create a bean for the custom implementation.
 
-```
+[source,java]
+----
 @Configuration
 public class KafkaBinderHealthIndicatorConfiguration {
 	@Bean
@@ -1065,4 +1061,4 @@ public class KafkaBinderHealthIndicatorConfiguration {
 		return new KafkaBinderHealthImplementation(admin);
 	}
 }
-```
+----

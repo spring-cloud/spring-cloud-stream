@@ -3,8 +3,8 @@
 
 The following configuration creates an exchange `myDestination` with queue `myDestination.consumerGroup` bound to a topic exchange with a wildcard routing key `#`:
 
-[source]
----
+[source,properties]
+----
 spring.cloud.stream.bindings.input.destination=myDestination
 spring.cloud.stream.bindings.input.group=consumerGroup
 #disable binder retries
@@ -13,7 +13,7 @@ spring.cloud.stream.bindings.input.consumer.max-attempts=1
 spring.cloud.stream.rabbit.bindings.input.consumer.auto-bind-dlq=true
 spring.cloud.stream.rabbit.bindings.input.consumer.dlq-ttl=5000
 spring.cloud.stream.rabbit.bindings.input.consumer.dlq-dead-letter-exchange=
----
+----
 
 This configuration creates a DLQ bound to a direct exchange (`DLX`) with a routing key of `myDestination.consumerGroup`.
 When messages are rejected, they are routed to the DLQ.
