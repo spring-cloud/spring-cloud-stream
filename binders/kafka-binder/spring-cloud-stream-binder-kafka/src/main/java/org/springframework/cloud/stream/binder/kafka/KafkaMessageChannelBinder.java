@@ -914,12 +914,18 @@ public class KafkaMessageChannelBinder extends
 	@Override
 	protected Map<String, Object> doGetAdditionalConfigurationProperties(String destinationName) {
 		ContainerProperties kafkaContainerProperties = this.kafkaMessageListenerContainers.iterator().next().getContainerProperties();
-		// see 3167 we need to nullify ObservationRegistry to avoid jackson deserialization error
-		kafkaContainerProperties.setObservationRegistry(new NullObservationRegistry());
-		Map mapOfContainerProperties = this.objectMapper.convertValue(kafkaContainerProperties, Map.class);
-		Map<String, Object> additionalConfigurationProperties = new HashMap<>();
-		additionalConfigurationProperties.put("containerProperties", mapOfContainerProperties);
-		return additionalConfigurationProperties;
+		ObservationRegistry observationRegistry = kafkaContainerProperties.getObservationRegistry();
+		try {
+			// See 3167; nullify ObservationRegistry to avoid Jackson deserialization errors.
+			kafkaContainerProperties.setObservationRegistry(new NullObservationRegistry());
+			Map mapOfContainerProperties = this.objectMapper.convertValue(kafkaContainerProperties, Map.class);
+			Map<String, Object> additionalConfigurationProperties = new HashMap<>();
+			additionalConfigurationProperties.put("containerProperties", mapOfContainerProperties);
+			return additionalConfigurationProperties;
+		}
+		finally {
+			kafkaContainerProperties.setObservationRegistry(observationRegistry);
+		}
 	}
 
 	private BiFunction<ConsumerRecord<?, ?>, Exception, TopicPartition> createDestResolver(
