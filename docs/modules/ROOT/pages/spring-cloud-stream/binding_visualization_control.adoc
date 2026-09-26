@@ -6,11 +6,11 @@ Spring Cloud Stream supports visualization and control of the Bindings through A
 [[programmatic-way]]
 == Programmatic way
 
-Since version 3.1 we expose `org.springframework.cloud.stream.binding.BindingsLifecycleController` which is registered as bean and once 
+Since version 3.1 we expose `org.springframework.cloud.stream.binding.BindingsLifecycleController` which is registered as bean and once
 injected could be used to control the lifecycle of individual bindings
 
-For example, looks at the fragment from one of the test cases. As you can see we retrieve `BindingsLifecycleController` 
-from spring application context and execute individual methods to control the lifecycle of `echo-in-0` binding..
+For example, looks at the fragment from one of the test cases. As you can see we retrieve `BindingsLifecycleController`
+from spring application context and execute individual methods to control the lifecycle of `echo-in-0` binding.
 
 [source,java]
 ----
@@ -25,8 +25,8 @@ assertThat(binding.isRunning()).isFalse();
 
 === Define new and manage existing bindings
 
-Additionally, starting version 4.2 using `BindingsLifecycleController` you can define new bindings as well as modify existing bindings configuration by accessing 
-its Consumer and Producer configuration properties for more dynamic management of its values. 
+Additionally, starting version 4.2 using `BindingsLifecycleController` you can define new bindings as well as modify existing bindings configuration by accessing
+its Consumer and Producer configuration properties for more dynamic management of its values.
 
 For example.
 
@@ -36,17 +36,17 @@ To define new input binding you can call `BindingsLifecycleController.createInpu
 ----
 DefaultBinderFactory binderFactory = context.getBean(DefaultBinderFactory.class);
 Object binder = binderFactory.getBinder("rabbit", MessageChannel.class);
-		
+
 String inputName = "test-output-binding";
-		
+
 BindingsLifecycleController controller = context.getBean(BindingsLifecycleController.class);
-		
+
 BindingProperties bindingProperties = new BindingProperties();
 bindingProperties.setDestination("myDest");
 bindingProperties.setGroup("myGroup"); // must define group for input binding
 ConsumerProperties consumerProperties = new ConsumerProperties();
-bindingProperties.setConsumer(consumerProperties);	
-		
+bindingProperties.setConsumer(consumerProperties);
+
 RabbitConsumerProperties extendedConsumerProperties = controller.createInputBinding(inputName, "rabbit", bindingProperties);
 ----
 
@@ -58,9 +58,9 @@ KafkaConsumerProperties properties = controller.getExtensionProperties("test-inp
 
 ----
 
-NOTE: Unlike binding names derived from function definition, explicitly defined bindings do not carry the `in-0/out-0` suffix since they are not backed by an actual function. 
+NOTE: Unlike binding names derived from function definition, explicitly defined bindings do not carry the `in-0/out-0` suffix since they are not backed by an actual function.
 
-The `getExtensionProperties(..)` operation is defined to ensure you get the proper type of the configuration properties class, so depending on the binder and binding used you can safely cast your extension properties to appropriate type. In our case it is `KafkaConsumerProperties` properties. 
+The `getExtensionProperties(..)` operation is defined to ensure you get the proper type of the configuration properties class, so depending on the binder and binding used you can safely cast your extension properties to appropriate type. In our case it is `KafkaConsumerProperties` properties.
 
 NOTE: Depending on the type of property you change, you may need to re-start the binding for it to take effect (ass seen earlier)
 
@@ -130,7 +130,8 @@ When using the binding actuator endpoint, it is sometimes critical to sanitize a
 To achieve this, end user applications can provide a `SanitizingFunction` from Spring Boot as a bean in the application.
 Here is an example to scramble the data when providing a value for Apache Kafka's `sasl.jaas.config` property.
 
-```
+[source,java]
+----
 @Bean
 public SanitizingFunction sanitizingFunction() {
 	return sanitizableData -> {
@@ -142,5 +143,5 @@ public SanitizingFunction sanitizingFunction() {
 		}
 	};
 }
-```
+----
 

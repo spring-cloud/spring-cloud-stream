@@ -20,8 +20,8 @@ Here is the order that it matches the Serdes.
 For e.g. if you have the following in the application, the binder detects that the incoming value type for the `KStream` matches with a type that is parameterized on a `Serde` bean.
 It will use that for inbound deserialization.
 
-
-```
+[source,java]
+----
 @Bean
 public Serde<Foo> customSerde() {
  ...
@@ -30,7 +30,7 @@ public Serde<Foo> customSerde() {
 @Bean
 public Function<KStream<String, Foo>, KStream<String, Foo>> process() {
 }
-```
+----
 
 * Next, it looks at the types and see if they are one of the types exposed by Kafka Streams. If so, use them.
 Here are the Serde types that the binder will try to match from Kafka Streams.
@@ -47,29 +47,32 @@ This can be configured in two ways - binding or default.
 First the binder will look if a `Serde` is provided at the binding level.
 For e.g. if you have the following processor,
 
-```
+[source,java]
+----
 @Bean
 public BiFunction<KStream<CustomKey, AvroIn1>, KTable<CustomKey, AvroIn2>, KStream<CustomKey, AvroOutput>> process() {...}
-```
+----
 
 then, you can provide a binding level `Serde` using the following:
 
-```
+[source,properties]
+----
 spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.keySerde=CustomKeySerde
 spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.valueSerde=io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
 
 spring.cloud.stream.kafka.streams.bindings.process-in-1.consumer.keySerde=CustomKeySerde
 spring.cloud.stream.kafka.streams.bindings.process-in-1.consumer.valueSerde=io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
-```
+----
 
-NOTE: If you provide `Serde` as abover per input binding, then that will takes higher precedence and the binder will stay away from any `Serde` inference.
+NOTE: If you provide `Serde` as abover per input binding, then that will take higher precedence and the binder will stay away from any `Serde` inference.
 
 If you want the default key/value Serdes to be used for inbound deserialization, you can do so at the binder level.
 
-```
+[source]
+----
 spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde
 spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde
-```
+----
 
 If you don't want the native decoding provided by Kafka, you can rely on the message conversion features that Spring Cloud Stream provides.
 Since native decoding is the default, in order to let Spring Cloud Stream deserialize the inbound value object, you need to explicitly disable native decoding.
@@ -79,9 +82,11 @@ You need to disable native decoding for all the inputs individually. Otherwise, 
 
 By default, Spring Cloud Stream will use `application/json` as the content type and use an appropriate json message converter.
 You can use custom message converters by using the following property and an appropriate `MessageConverter` bean.
-```
+
+[source]
+----
 spring.cloud.stream.bindings.process-in-0.contentType
-```
+----
 
 [[outbound-serialization]]
 == Outbound serialization
@@ -96,16 +101,17 @@ If it can't infer the type of the key, then that needs to be specified using con
 Value serdes are inferred using the same rules used for inbound deserialization.
 First it matches to see if the outbound type is from a provided bean in the application.
 If not, it checks to see if it matches with a `Serde` exposed by Kafka such as - `Integer`, `Long`, `Short`, `Double`, `Float`, `byte[]`, `UUID` and `String`.
-If that doesnt't work, then it falls back to `JacksonJsonSerde` provided by the Spring Kafka project, but first look at the default `Serde` configuration to see if there is a match.
+If that doesn't work, then it falls back to `JacksonJsonSerde` provided by the Spring Kafka project, but first look at the default `Serde` configuration to see if there is a match.
 Keep in mind that all these happen transparently to the application.
 If none of these work, then the user has to provide the `Serde` to use by configuration.
 
 Lets say you are using the same `BiFunction` processor as above. Then you can configure outbound key/value Serdes as following.
 
-```
+[source,properties]
+----
 spring.cloud.stream.kafka.streams.bindings.process-out-0.producer.keySerde=CustomKeySerde
 spring.cloud.stream.kafka.streams.bindings.process-out-0.producer.valueSerde=io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
-```
+----
 
 If Serde inference fails, and no binding level Serdes are provided, then the binder falls back to the `JacksonJsonSerde`, but look at the default Serdes for a match.
 
@@ -117,15 +123,17 @@ Default serdes are configured in the same way as above where it is described und
 If your application uses the branching feature and has multiple output bindings, then these have to be configured per binding.
 Once again, if the binder is capable of inferring the `Serde` types, you don't need to do this configuration.
 
-If you don't want the native encoding provided by Kafka, but want to use the framework provided message conversion, then you need to explicitly disable native encoding since since native encoding is the default.
+If you don't want the native encoding provided by Kafka, but want to use the framework provided message conversion, then you need to explicitly disable native encoding since native encoding is the default.
 For e.g. if you have the same BiFunction processor as above, then `spring.cloud.stream.bindings.process-out-0.producer.useNativeEncoding: false`
 You need to disable native encoding for all the output individually in the case of branching. Otherwise, native encoding will still be applied for those you don't disable.
 
 When conversion is done by Spring Cloud Stream, by default, it will use `application/json` as the content type and use an appropriate json message converter.
 You can use custom message converters by using the following property and a corresponding `MessageConverter` bean.
-```
+
+[source]
+----
 spring.cloud.stream.bindings.process-out-0.contentType
-```
+----
 
 When native encoding/decoding is disabled, binder will not do any inference as in the case of native Serdes.
 Applications need to explicitly provide all the configuration options.

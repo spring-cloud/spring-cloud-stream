@@ -54,7 +54,7 @@ Otherwise, the retries for transient errors are used up very quickly.
 The following code listings show the sample application:
 
 .application.properties
-[source]
+[source,properties]
 ----
 spring.cloud.stream.bindings.input.group=so8400replay
 spring.cloud.stream.bindings.input.destination=error.so8400out.so8400
