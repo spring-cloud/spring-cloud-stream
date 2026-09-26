@@ -27,7 +27,7 @@ import org.springframework.context.ApplicationEvent;
  * generated locally (possibly in response to a remote event). Applications that want to
  * audit remote events can listen for this one and the {@link AckRemoteApplicationEvent}
  * from all the consumers (the {@link #getId() id} of this event is the
- * {@link AckRemoteApplicationEvent#getAckId() ackId} of the corresponding ACK.
+ * {@link AckRemoteApplicationEvent#getAckId() ackId} of the corresponding ACK).
  *
  * @author Dave Syer
  */

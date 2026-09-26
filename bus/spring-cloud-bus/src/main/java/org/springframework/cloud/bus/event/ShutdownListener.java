@@ -44,7 +44,7 @@ public class ShutdownListener implements ApplicationListener<ShutdownRemoteAppli
 	@Override
 	public void onApplicationEvent(ShutdownRemoteApplicationEvent event) {
 		if (serviceMatcher.isForSelf(event)) {
-			LOG.warn("Received remote shutdown request from " + event.getOriginService() + ".  Shutting down.");
+			LOG.warn("Received remote shutdown request from " + event.getOriginService() + ". Shutting down.");
 			shutdown();
 		}
 		else {

@@ -1,14 +1,14 @@
 [[spring-cloud-gateway-quickstart]]
 = Quickstart
 
-Spring Cloud Bus works by adding Spring Boot autconfiguration if it detects itself on the
+Spring Cloud Bus works by adding Spring Boot autoconfiguration if it detects itself on the
 classpath. To enable the bus, add `spring-cloud-starter-bus-amqp` or
 `spring-cloud-starter-bus-kafka` to your dependency management. Spring Cloud takes care of
 the rest. Make sure the broker (RabbitMQ or Kafka) is available and configured. When
 running on localhost, you need not do anything. For information about configuring the
 broker, see the Spring Cloud Stream documentation for
-https://docs.spring.io/spring-cloud-stream/reference/rabbit/rabbit_overview.html[RabbitMQ]
-or https://docs.spring.io/spring-cloud-stream/reference/kafka/kafka_overview.html[Kafka].
+https://docs.spring.io/spring-cloud-stream/reference/{spring-cloud-version}/rabbit/rabbit_overview.html[RabbitMQ]
+or https://docs.spring.io/spring-cloud-stream/reference/{spring-cloud-version}/kafka/kafka_overview.html[Kafka].
 
 The bus currently supports sending messages to all nodes listening or all nodes for a
 particular service (as defined by Eureka). The `/bus*` actuator namespace has some HTTP
