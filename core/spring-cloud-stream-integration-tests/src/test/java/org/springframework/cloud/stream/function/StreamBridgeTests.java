@@ -288,7 +288,7 @@ class StreamBridgeTests {
 			"--spring.cloud.stream.bindings.outputD-out-0.content-type=text/html",
 			"--spring.jmx.enabled=false")) {
 			StreamBridge streamBridge = context.getBean(StreamBridge.class);
-			Field field =  ReflectionUtils.findField(StreamBridge.class, "streamBridgeFunctionCache");
+			Field field = ReflectionUtils.findField(StreamBridge.class, "streamBridgeFunctionCache");
 			Objects.requireNonNull(field).setAccessible(true);
 			Map functionCache = (Map) field.get(streamBridge);
 
@@ -320,7 +320,7 @@ class StreamBridgeTests {
 
 			"--spring.jmx.enabled=false")) {
 			StreamBridge streamBridge = context.getBean(StreamBridge.class);
-			Field field =  ReflectionUtils.findField(StreamBridge.class, "streamBridgeFunctionCache");
+			Field field = ReflectionUtils.findField(StreamBridge.class, "streamBridgeFunctionCache");
 			Objects.requireNonNull(field).setAccessible(true);
 
 

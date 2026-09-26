@@ -71,7 +71,7 @@ public abstract class AbstractKafkaBinderHealthIndicator extends AbstractHealthI
 
 	protected abstract Health buildBinderSpecificHealthDetails();
 
-	protected  abstract ExecutorService createHealthBinderExecutorService();
+	protected abstract ExecutorService createHealthBinderExecutorService();
 
 	private void initMetadataConsumer() {
 		if (this.metadataConsumer == null) {

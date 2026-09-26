@@ -88,7 +88,7 @@ public abstract class AbstractExtendedBindingProperties<C, P, T extends BinderSp
 		GenericConversionService cs = (GenericConversionService) this.applicationContext.getBeanFactory().getConversionService();
 		Iterable<ConfigurationPropertySource> sources = ConfigurationPropertySources.get(this.applicationContext.getEnvironment());
 		PropertySourcesPlaceholdersResolver placeholdersResolver = new PropertySourcesPlaceholdersResolver(this.applicationContext.getEnvironment());
-		this.propertiesBinder =  new Binder(sources, placeholdersResolver, cs, null, null);
+		this.propertiesBinder = new Binder(sources, placeholdersResolver, cs, null, null);
 	}
 
 	/*

@@ -61,7 +61,7 @@ public final class FunctionBindingTestUtils {
 			System.setProperty("spring.cloud.function.definition", functionName);
 			applicationContext.getBeanFactory().registerSingleton(functionName, function);
 
-			Object actualFunction =  ((FunctionInvocationWrapper) applicationContext
+			Object actualFunction = ((FunctionInvocationWrapper) applicationContext
 				.getBean(FunctionCatalog.class).lookup(functionName)).getTarget();
 
 			InitializingBean functionBindingRegistrar = applicationContext.getBean("functionBindingRegistrar", InitializingBean.class);
