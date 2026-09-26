@@ -55,12 +55,12 @@ import org.springframework.kafka.support.serializer.JacksonJsonSerde;
  * 					(k, v, aggregates) -&gt; {
  * 							aggregates.add(v);
  * 							return aggregates;
- *                                                },
+ * 					},
  * 					Materialized.&lt;String, Collection&lt;Foo&gt;, WindowStore&lt;Bytes, byte[]&gt;&gt;as(
  * 						"foo-store")
  * 						.withKeySerde(Serdes.String())
  *						.withValueSerde(new CollectionSerde&lt;&gt;(Foo.class, ArrayList.class)))
- *  * </pre>
+ * </pre>
  *
  * Supported Collection types by this Serde are - {@link java.util.ArrayList}, {@link java.util.LinkedList},
  * {@link java.util.PriorityQueue} and {@link java.util.HashSet}. Deserializer will throw an exception

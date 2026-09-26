@@ -1607,7 +1607,7 @@ class ImplicitFunctionBindingTests {
 
 		@Bean
 		public Supplier<Flux<Person>> reactivePersonSupplier() {
-			return () ->  {
+			return () -> {
 				Person p = new Person();
 				p.setId(21);
 				p.setName("Jim Lehey");

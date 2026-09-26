@@ -114,7 +114,7 @@ public class GlobalKTableBoundElementFactory
 					.equals(GlobalKTable.class)) {
 				Assert.notNull(this.delegate,
 						"Trying to prepareConsumerBinding " + methodInvocation.getMethod()
-								+ "  but no delegate has been set.");
+								+ " but no delegate has been set.");
 				return methodInvocation.getMethod().invoke(this.delegate,
 						methodInvocation.getArguments());
 			}

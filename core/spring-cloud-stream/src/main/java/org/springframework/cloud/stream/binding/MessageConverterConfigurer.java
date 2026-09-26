@@ -157,7 +157,7 @@ public class MessageConverterConfigurer
 			}
 		}
 
-		Environment environment = this.beanFactory  == null ? null : this.beanFactory.getBean(Environment.class);
+		Environment environment = this.beanFactory == null ? null : this.beanFactory.getBean(Environment.class);
 		ConsumerProperties consumerProperties = bindingProperties.getConsumer();
 		if (this.isNativeEncodingNotSet(producerProperties, consumerProperties, inbound)) {
 			if (inbound) {

@@ -408,7 +408,7 @@ public class BindingService {
 		}
 	}
 
-	public void unbindProducers(@Nullable  String binderName, String outputName) {
+	public void unbindProducers(@Nullable String binderName, String outputName) {
 		String cacheKey = createChannelCacheKey(binderName, outputName, bindingServiceProperties);
 		unbindProducers(cacheKey);
 	}
