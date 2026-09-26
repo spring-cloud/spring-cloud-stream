@@ -493,7 +493,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 		}
 	}
 
-	private List<String> getOutputBindings(String functionName, int outputs)  {
+	private List<String> getOutputBindings(String functionName, int outputs) {
 		List<String> outputBindings = this.streamFunctionProperties.getOutputBindings(functionName);
 		List<String> outputBindingNames = new ArrayList<>();
 		if (!CollectionUtils.isEmpty(outputBindings)) {

@@ -183,7 +183,7 @@ class KafkaStreamsFunctionStateStoreTests {
 		public StoreBuilder otherStore() {
 			return Stores.windowStoreBuilder(
 					Stores.persistentWindowStore("other-store",
-							Duration.ofSeconds(3), Duration.ofSeconds(3),  false), Serdes.Long(),
+							Duration.ofSeconds(3), Duration.ofSeconds(3), false), Serdes.Long(),
 					Serdes.Long());
 		}
 	}

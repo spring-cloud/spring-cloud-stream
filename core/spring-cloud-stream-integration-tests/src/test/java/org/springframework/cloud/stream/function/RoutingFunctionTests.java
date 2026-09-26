@@ -336,7 +336,7 @@ class RoutingFunctionTests {
 	}
 
 	@EnableAutoConfiguration
-	public static class RoutingConsumerConfiguration  {
+	public static class RoutingConsumerConfiguration {
 		@Bean
 		public Consumer<String> consume() {
 			return System.out::println;
@@ -348,7 +348,7 @@ class RoutingFunctionTests {
 	}
 
 	@EnableAutoConfiguration
-	public static class RoutingFunctionConfiguration  {
+	public static class RoutingFunctionConfiguration {
 
 		@Bean
 		public Function<String, String> echo() {

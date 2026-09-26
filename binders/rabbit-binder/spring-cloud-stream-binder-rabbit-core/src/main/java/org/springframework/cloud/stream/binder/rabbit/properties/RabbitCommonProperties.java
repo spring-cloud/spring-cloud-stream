@@ -203,13 +203,13 @@ public abstract class RabbitCommonProperties {
 	 * A map of binding arguments to apply when binding the queue to the exchange.
 	 * Useful for a headers exchange, for example.
 	 */
-	private Map<String, String>  queueBindingArguments = new HashMap<>();
+	private Map<String, String> queueBindingArguments = new HashMap<>();
 
 	/**
 	 * A map of binding arguments to apply when binding the dlq to the exchange.
 	 * Useful for a headers exchange, for example.
 	 */
-	private Map<String, String>  dlqBindingArguments = new HashMap<>();
+	private Map<String, String> dlqBindingArguments = new HashMap<>();
 
 	/**
 	 * Configure the queue to be type quorum instead of classic.

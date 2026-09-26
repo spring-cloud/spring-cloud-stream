@@ -283,7 +283,7 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 						addPartitioningInterceptorIfNeedBe(producerProperties, destinationName, (AbstractMessageChannel) messageChannel);
 					}
 					if (ObjectUtils.containsElement(consumerBindingNames, destinationName)) { //GH-2563
-						logger.warn("You seem to be sending data to the input binding.  It is not "
+						logger.warn("You seem to be sending data to the input binding. It is not "
 								+ "recommended, since you are bypassing the binder and this the messaging system exposed by the binder.");
 					}
 				}

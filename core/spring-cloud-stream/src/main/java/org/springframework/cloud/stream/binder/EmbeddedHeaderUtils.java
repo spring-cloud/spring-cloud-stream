@@ -116,7 +116,7 @@ public abstract class EmbeddedHeaderUtils {
 	 * @throws Exception when extraction failed
 	 */
 	public static MessageValues extractHeaders(Message<byte[]> message,
-											   boolean copyRequestHeaders) throws Exception {
+												boolean copyRequestHeaders) throws Exception {
 		return extractHeaders(message.getPayload(), copyRequestHeaders,
 			message.getHeaders());
 	}

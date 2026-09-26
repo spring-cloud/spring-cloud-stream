@@ -338,7 +338,7 @@ class MultipleInputOutputFunctionTests {
 		}
 
 		@Bean
-		public  Function<Tuple2<Flux<String>, Flux<Integer>>, Flux<String>> multiInputSingleOutput() {
+		public Function<Tuple2<Flux<String>, Flux<Integer>>, Flux<String>> multiInputSingleOutput() {
 			return tuple -> {
 				Flux<String> stringStream = tuple.getT1();
 				Flux<String> intStream = tuple.getT2().map(i -> String.valueOf(i));
@@ -347,7 +347,7 @@ class MultipleInputOutputFunctionTests {
 		}
 
 		@Bean
-		public  Function<Tuple2<Flux<Message<String>>, Flux<Message<Integer>>>, Flux<String>> multiInputSingleOutputMessage() {
+		public Function<Tuple2<Flux<Message<String>>, Flux<Message<Integer>>>, Flux<String>> multiInputSingleOutputMessage() {
 			return tuple -> {
 				Flux<String> stringStream = tuple.getT1().map(m -> m.getPayload());
 				Flux<String> intStream = tuple.getT2().map(i -> {

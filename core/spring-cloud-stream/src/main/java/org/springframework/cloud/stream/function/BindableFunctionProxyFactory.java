@@ -151,7 +151,7 @@ public class BindableFunctionProxyFactory extends BindableProxyFactory implement
 	}
 
 	protected boolean isMultiple() {
-		return  this.inputCount > 1 || this.outputCount > 1;
+		return this.inputCount > 1 || this.outputCount > 1;
 	}
 
 	private String buildInputNameForIndex(int index) {

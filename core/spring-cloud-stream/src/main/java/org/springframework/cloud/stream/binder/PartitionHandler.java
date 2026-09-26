@@ -149,7 +149,7 @@ public class PartitionHandler {
 			Map<String, PartitionKeyExtractorStrategy> extractors = this.beanFactory
 					.getBeansOfType(PartitionKeyExtractorStrategy.class);
 			Assert.isTrue(extractors.size() <= 1,
-					"Multiple  beans of type 'PartitionKeyExtractorStrategy' found. "
+					"Multiple beans of type 'PartitionKeyExtractorStrategy' found. "
 							+ extractors + ". Please "
 							+ "use 'spring.cloud.stream.bindings.output.producer.partitionKeyExtractorName' property to specify "
 							+ "the name of the bean to be used.");
@@ -175,7 +175,7 @@ public class PartitionHandler {
 			Map<String, PartitionSelectorStrategy> selectors = this.beanFactory
 					.getBeansOfType(PartitionSelectorStrategy.class);
 			Assert.isTrue(selectors.size() <= 1,
-					"Multiple  beans of type 'PartitionSelectorStrategy' found. "
+					"Multiple beans of type 'PartitionSelectorStrategy' found. "
 							+ selectors + ". Please "
 							+ "use 'spring.cloud.stream.bindings.output.producer.partitionSelectorName' property to specify "
 							+ "the name of the bean to be used.");

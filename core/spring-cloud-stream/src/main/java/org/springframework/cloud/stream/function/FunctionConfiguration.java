@@ -207,7 +207,7 @@ public class FunctionConfiguration {
 						return;
 					}
 					Assert.isTrue(proxyFactory.getOutputs().size() == 1, "Supplier with multiple outputs is not supported at the moment.");
-					String outputName  = proxyFactory.getOutputs().iterator().next();
+					String outputName = proxyFactory.getOutputs().iterator().next();
 
 					BindingProperties bindingProperties = serviceProperties.getBindingProperties(outputName);
 					ProducerProperties producerProperties = bindingProperties.getProducer();
@@ -627,7 +627,7 @@ public class FunctionConfiguration {
 							}
 						})
 						.doOnError(e -> {
-							logger.error("Failure was detected during execution of the reactive function '" +  functionDefinition + "'");
+							logger.error("Failure was detected during execution of the reactive function '" + functionDefinition + "'");
 							((Throwable) e).printStackTrace();
 						});
 					}

@@ -150,10 +150,10 @@ class RabbitBinderCleanerTests {
 					throws InterruptedException, URISyntaxException {
 
 				int n = 0;
-				Map<String, Object> queue = getQueue("/",  queueName);
+				Map<String, Object> queue = getQueue("/", queueName);
 				while (n++ < 100 && !requiredState(state, queue)) {
 					Thread.sleep(100);
-					queue = getQueue("/",  queueName);
+					queue = getQueue("/", queueName);
 				}
 				assertThat(n).withFailMessage(
 						"Consumer state remained at " + state + " after 10 seconds")

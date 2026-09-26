@@ -109,7 +109,7 @@ public class KTableBoundElementFactory extends AbstractBindingTargetFactory<KTab
 			if (methodInvocation.getMethod().getDeclaringClass().equals(KTable.class)) {
 				Assert.notNull(this.delegate,
 						"Trying to prepareConsumerBinding " + methodInvocation.getMethod()
-								+ "  but no delegate has been set.");
+								+ " but no delegate has been set.");
 				return methodInvocation.getMethod().invoke(this.delegate,
 						methodInvocation.getArguments());
 			}
