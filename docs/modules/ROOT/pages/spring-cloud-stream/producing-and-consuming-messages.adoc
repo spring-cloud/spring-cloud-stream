@@ -398,8 +398,8 @@ NOTE: If you are using the Solace PubSub+ binder, Spring Cloud Stream has reserv
 You can also provide specific content type if necessary with the following method signature `public boolean send(String bindingName, Object data, MimeType outputContentType)`.
 Or if you send data as a `Message`, its content type will be honored.
 
-[[using-specific-binder-type-with-streambridge]]
-==== Using specific binder type with StreamBridge
+[[using-specific-binder-name-with-streambridge]]
+==== Using specific binder name with StreamBridge
 
 Spring Cloud Stream supports multiple binder scenarios. For example you may be receiving data from Kafka and sending it to RabbitMQ.
 

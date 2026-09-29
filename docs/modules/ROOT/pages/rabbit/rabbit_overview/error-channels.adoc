@@ -10,7 +10,7 @@ RabbitMQ has two types of send failures:
 * Negatively acknowledged https://www.rabbitmq.com/confirms.html[Publisher Confirms].
 
 The latter is rare.
-According to the RabbitMQ documentation "[A nack] will only be delivered if an internal error occurs in the Erlang process responsible for a queue.".
+According to the RabbitMQ documentation "[A nack] will only be delivered if an internal error occurs in the Erlang process responsible for a queue."
 You can also get a negative acknowledgment if you publish to a bounded queue with `reject-publish` queue overflow behavior.
 
 As well as enabling producer error channels (as described in "`xref:spring-cloud-stream/overview-error-handling.adoc[Error Handling]`"), the RabbitMQ binder only sends messages to the channels if the connection factory is appropriately configured, as follows:

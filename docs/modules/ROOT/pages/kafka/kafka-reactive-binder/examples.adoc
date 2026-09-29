@@ -45,7 +45,7 @@ public Consumer<Flux<Message<String>>> consume() {
 Refer to the `reactor-kafka` documentation and javadocs for more information.
 
 In addition, starting with version 4.0.3, the Kafka consumer property `reactiveAtmostOnce` can be set to `true` and the binder will automatically commit the offsets before records returned by each poll are processed.
-Also, starting with version 4.0.3, you can set the consumer property `reactiveAutoCommit` to `true` and the the binder will automatically commit the offsets after the records returned by each poll are processed.
+Also, starting with version 4.0.3, you can set the consumer property `reactiveAutoCommit` to `true` and the binder will automatically commit the offsets after the records returned by each poll are processed.
 In these cases, the acknowledgment header is not present.
 
 IMPORTANT: 4.0.2 also provided `reactiveAutoCommit`, but the implementation was incorrect, it behaved similarly to `reactiveAtMostOnce`.

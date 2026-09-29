@@ -129,7 +129,7 @@ Assuming you have RabbitMQ installed and running, you can start the application 
 
 You should see following output:
 
-[source]
+[source,bash]
 ----
 	--- [ main] c.s.b.r.p.RabbitExchangeQueueProvisioner : declaring queue for inbound: input.anonymous.CbMIwdkJSBO1ZoPDOtHtCg, bound to: input
 	--- [ main] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
