@@ -1,0 +1,59 @@
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "main"
+    schedule:
+      interval: "weekly"
+    exclude-paths:
+      - ".github/workflows/release-train-test.yml"
+      - ".github/workflows/release-train-build.yml"
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: daily
+    target-branch: main
+    ignore:
+      # ignore major updates
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
+  - package-ecosystem: npm
+    target-branch: docs-build
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: npm
+    target-branch: main
+    directory: /docs
+    schedule:
+      interval: weekly
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "5.0.x"
+    schedule:
+      interval: "weekly"
+    exclude-paths:
+      - ".github/workflows/release-train-test.yml"
+      - ".github/workflows/release-train-build.yml"
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: daily
+    target-branch: 5.0.x
+    ignore:
+      # only upgrade by minor or patch
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+  - package-ecosystem: npm
+    target-branch: 5.0.x
+    directory: /docs
+    schedule:
+      interval: weekly

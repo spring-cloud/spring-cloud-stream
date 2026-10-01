@@ -1,0 +1,9 @@
+[[spring-cloud-bus-intro]]
+= Introduction
+
+Spring Cloud Bus links the nodes of a distributed system with a lightweight message
+broker. This broker can then be used to broadcast state changes (such as configuration
+changes) or other management instructions. A key idea is that the bus is like a
+distributed actuator for a Spring Boot application that is scaled out. However, it can
+also be used as a communication channel between apps. This project provides starters for
+either an AMQP broker or Kafka as the transport.

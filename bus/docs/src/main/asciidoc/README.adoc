@@ -1,0 +1,18 @@
+[[spring-cloud-bus]]
+= Spring Cloud Bus
+:page-section-summary-toc: 1
+
+
+[[quick-start]]
+== Quick Start
+
+
+[[building]]
+== Building
+
+include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/main/docs/modules/ROOT/partials/building.adoc[]
+
+[[contributing]]
+== Contributing
+
+include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/main/docs/modules/ROOT/partials/contributing.adoc[]
