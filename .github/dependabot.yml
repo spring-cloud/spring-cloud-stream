@@ -17,11 +17,10 @@ updates:
     target-branch: main
     ignore:
       - dependency-name: "org.eclipse.m2e:lifecycle-mapping"
-      # only upgrade patch versions for maintenance branch
+      # ignore major updates
       - dependency-name: "*"
         update-types:
           - version-update:semver-major
-          - version-update:semver-minor
   - package-ecosystem: npm
     target-branch: docs-build
     directory: /
