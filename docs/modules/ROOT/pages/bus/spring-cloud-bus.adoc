@@ -1,5 +1,5 @@
 [[spring-cloud-bus-intro]]
-= Introduction
+= Spring Cloud Bus
 
 Spring Cloud Bus links the nodes of a distributed system with a lightweight message
 broker. This broker can then be used to broadcast state changes (such as configuration
