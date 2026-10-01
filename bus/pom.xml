@@ -10,23 +10,19 @@
 
 	<name>spring-cloud-bus-parent</name>
 	<description>Spring Cloud Bus Parent</description>
-	<url>https://github.com/spring-cloud/spring-cloud-bus</url>
 
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
-		<artifactId>spring-cloud-build</artifactId>
+		<artifactId>spring-cloud-stream-parent</artifactId>
 		<version>5.1.0-SNAPSHOT</version>
-		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 
 	<modules>
-		<module>spring-cloud-bus-dependencies</module>
 		<module>spring-cloud-bus</module>
 		<module>spring-cloud-bus-tests</module>
 		<module>spring-cloud-starter-bus-amqp</module>
 		<module>spring-cloud-starter-bus-kafka</module>
 		<module>spring-cloud-starter-bus-stream</module>
-		<module>docs</module>
 	</modules>
 
 	<licenses>
@@ -59,109 +55,11 @@
 	</developers>
 	<properties>
 		<spring-cloud-commons.version>5.1.0-SNAPSHOT</spring-cloud-commons.version>
-		<spring-cloud-stream.version>5.1.0-SNAPSHOT</spring-cloud-stream.version>
-		<spring-cloud-function.version>5.1.0-SNAPSHOT</spring-cloud-function.version>
-		<bintray.package>bus</bintray.package>
 	</properties>
 
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>flatten-maven-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-checkstyle-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<groupId>io.spring.javaformat</groupId>
-				<artifactId>spring-javaformat-maven-plugin</artifactId>
-			</plugin>
-		</plugins>
-	</build>
-
-	<reporting>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-checkstyle-plugin</artifactId>
-			</plugin>
-		</plugins>
-	</reporting>
-
-	<profiles>
-		<profile>
-			<id>spring</id>
-			<repositories>
-				<repository>
-					<id>spring-snapshots</id>
-					<name>Spring Snapshots</name>
-					<url>https://repo.spring.io/snapshot</url>
-					<snapshots>
-						<enabled>true</enabled>
-					</snapshots>
-					<releases>
-						<enabled>false</enabled>
-					</releases>
-				</repository>
-				<repository>
-					<id>spring-milestones</id>
-					<name>Spring Milestones</name>
-					<url>https://repo.spring.io/milestone</url>
-					<snapshots>
-						<enabled>false</enabled>
-					</snapshots>
-				</repository>
-				<repository>
-					<id>spring-releases</id>
-					<name>Spring Releases</name>
-					<url>https://repo.spring.io/release</url>
-					<snapshots>
-						<enabled>false</enabled>
-					</snapshots>
-				</repository>
-			</repositories>
-			<pluginRepositories>
-				<pluginRepository>
-					<id>spring-snapshots</id>
-					<name>Spring Snapshots</name>
-					<url>https://repo.spring.io/snapshot</url>
-					<snapshots>
-						<enabled>true</enabled>
-					</snapshots>
-					<releases>
-						<enabled>false</enabled>
-					</releases>
-				</pluginRepository>
-				<pluginRepository>
-					<id>spring-milestones</id>
-					<name>Spring Milestones</name>
-					<url>https://repo.spring.io/milestone</url>
-					<snapshots>
-						<enabled>false</enabled>
-					</snapshots>
-				</pluginRepository>
-				<pluginRepository>
-					<id>spring-releases</id>
-					<name>Spring Releases</name>
-					<url>https://repo.spring.io/release</url>
-					<snapshots>
-						<enabled>false</enabled>
-					</snapshots>
-				</pluginRepository>
-			</pluginRepositories>
-		</profile>
-	</profiles>
 	<dependencyManagement>
 		<dependencies>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-bus-dependencies</artifactId>
-				<version>${project.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
+			<!-- TODO: move commons dependency to stream parent -->
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-commons-dependencies</artifactId>
@@ -177,38 +75,9 @@
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream</artifactId>
-				<version>${spring-cloud-stream.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-dependencies</artifactId>
-				<version>${spring-cloud-stream.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-function-dependencies</artifactId>
-				<version>${spring-cloud-function.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-function-rsocket</artifactId>
-				<version>${spring-cloud-function.version}</version>
+				<version>${project.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
-
-	<scm>
-		<url>https://github.com/spring-cloud/spring-cloud-bus</url>
-		<connection>scm:git:git://github.com/spring-cloud/spring-cloud-bus.git
-		</connection>
-		<developerConnection>
-			scm:git:ssh://git@github.com/spring-cloud/spring-cloud-bus.git
-		</developerConnection>
-		<tag>HEAD</tag>
-	</scm>
 
 </project>
