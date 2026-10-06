@@ -1,0 +1,23 @@
+[[spring-cloud-bus-quickstart]]
+= Quickstart
+
+Spring Cloud Bus works by adding Spring Boot autoconfiguration if it detects itself on the
+classpath. To enable the bus, add `spring-cloud-starter-bus-amqp` or
+`spring-cloud-starter-bus-kafka` to your dependency management. Spring Cloud takes care of
+the rest. Make sure the broker (RabbitMQ or Kafka) is available and configured. When
+running on localhost, you need not do anything. For information about configuring the
+broker, see the Spring Cloud Stream documentation for
+xref:../rabbit/rabbit_overview.adoc[RabbitMQ]
+or xref:../kafka/kafka-binder/usage.adoc[Kafka]
+
+The bus currently supports sending messages to all nodes listening or all nodes for a
+particular service (as defined by Eureka). The `/bus*` actuator namespace has some HTTP
+endpoints. Currently, three are implemented. The first, `/busenv`, sends key/value pairs to
+update each node's Spring Environment. The second, `/busrefresh`, reloads each
+application's configuration, as though they had all been pinged on their `/refresh`
+endpoint.  The third `/busshutdown` sends a shutdown event to gracefully shutdown the application instance(s).
+
+NOTE: The Spring Cloud Bus starters cover Rabbit and Kafka, because those are the two most
+common implementations. However, Spring Cloud Bus uses Spring Cloud Stream and can work
+with other Spring Cloud Stream binders as well. For information about configuring other
+binders, see the documentation for the corresponding Spring Cloud Stream binder.

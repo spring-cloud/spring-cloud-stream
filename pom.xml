@@ -66,6 +66,7 @@
 	<modules>
 		<module>core</module>
 		<module>binders</module>
+		<module>bus</module>
 		<module>schema-registry</module>
 		<module>bom</module>
 		<module>docs</module>
