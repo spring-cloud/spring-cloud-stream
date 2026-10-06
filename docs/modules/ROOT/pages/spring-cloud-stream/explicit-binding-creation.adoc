@@ -12,6 +12,7 @@ Spring Cloud Stream allows you to define input and output bindings explicitly vi
 properties. Noticed the plural in the property names allowing you to define multiple bindings by simply using `;` as a delimiter.
 Just look at the following test case as an example:
 
+[source,java]
 ----
 @Test
 public void testExplicitBindings() {
