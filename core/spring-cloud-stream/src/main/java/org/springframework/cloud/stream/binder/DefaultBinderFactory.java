@@ -79,6 +79,7 @@ import org.springframework.util.StringUtils;
  * @author Chris Bono
  * @author Byungjun You
  * @author Omer Celik
+ * @author Sharang Gupta
  */
 public class DefaultBinderFactory implements BinderFactory, DisposableBean, ApplicationContextAware, SmartLifecycle {
 
@@ -150,10 +151,24 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 	@Override
 	public void start() {
-		// This is essentially used when CRaC checkpoint is restored
 		if (this.running.compareAndSet(false, true)) {
-			this.binderInstanceCache.values().stream().map(Entry::getValue).forEach(ConfigurableApplicationContext::start);
+			restartStoppedBinderContexts();
 		}
+	}
+
+	/**
+	 * Restarts only the binder contexts previously stopped via {@link #stop()}, which is
+	 * essentially the CRaC checkpoint restore. A freshly refreshed binder context is
+	 * already running and must be left alone: starting it again would also start its
+	 * plain {@link org.springframework.context.Lifecycle} beans, which Spring never
+	 * auto-starts.
+	 */
+	private void restartStoppedBinderContexts() {
+		this.binderInstanceCache.values()
+			.stream()
+			.map(Entry::getValue)
+			.filter(binderContext -> !binderContext.isRunning())
+			.forEach(ConfigurableApplicationContext::start);
 	}
 
 	@Override
