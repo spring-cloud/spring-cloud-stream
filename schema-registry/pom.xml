@@ -15,7 +15,7 @@
 
 	<properties>
 		<avro.version>1.12.1</avro.version>
-		<h2.version>2.3.232</h2.version>
+		<h2.version>2.5.252</h2.version>
 	</properties>
 
 	<modules>
