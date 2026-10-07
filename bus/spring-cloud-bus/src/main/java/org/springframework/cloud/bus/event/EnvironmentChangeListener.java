@@ -22,6 +22,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.bus.ServiceMatcher;
 import org.springframework.cloud.context.environment.EnvironmentManager;
 import org.springframework.context.ApplicationListener;
 
@@ -35,8 +36,15 @@ public class EnvironmentChangeListener implements ApplicationListener<Environmen
 	@Autowired
 	private EnvironmentManager env;
 
+	@Autowired
+	private ServiceMatcher serviceMatcher;
+
 	@Override
 	public void onApplicationEvent(EnvironmentChangeRemoteApplicationEvent event) {
+		if (!this.serviceMatcher.isForSelf(event)) {
+			log.info("Environment change not performed, the event was targeting " + event.getDestinationService());
+			return;
+		}
 		Map<String, String> values = event.getValues();
 		log.info("Received remote environment change request. Keys/values to update " + values);
 		for (Map.Entry<String, String> entry : values.entrySet()) {
