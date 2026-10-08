@@ -82,6 +82,22 @@ class KafkaStreamsBinderHealthIndicatorTests {
 	}
 
 	@Test
+	void healthIndicatorDownWhenKafkaBrokerIsNotReachable() throws Exception {
+		try (ConfigurableApplicationContext context = singleStreamWithUnreachableBroker()) {
+			TimeUnit.SECONDS.sleep(2);
+
+			CompositeHealthContributor healthIndicator = context
+				.getBean("bindersHealthContributor", CompositeHealthContributor.class);
+			KafkaStreamsBinderHealthIndicator kafkaStreamsBinderHealthIndicator =
+				(KafkaStreamsBinderHealthIndicator) healthIndicator.getContributor("kstream");
+
+			Health health = kafkaStreamsBinderHealthIndicator.health();
+
+			assertThat(health.getStatus()).isEqualTo(Status.DOWN);
+		}
+	}
+
+	@Test
 	void healthIndicatorUpMultipleCallsTest() throws Exception {
 		try (ConfigurableApplicationContext context = singleStream("ApplicationHealthTest-xyz")) {
 			int callsToPerform = 5;
@@ -206,6 +222,27 @@ class KafkaStreamsBinderHealthIndicatorTests {
 						+ applicationId,
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
 						+ embeddedKafka.getBrokersAsString());
+	}
+
+	private ConfigurableApplicationContext singleStreamWithUnreachableBroker() {
+		SpringApplication app = new SpringApplication(KStreamApplication.class);
+		app.setWebApplicationType(WebApplicationType.NONE);
+
+		return app.run(
+			"--server.port=0",
+			"--spring.jmx.enabled=false",
+			"--spring.cloud.stream.function.bindings.process-in-0=input",
+			"--spring.cloud.stream.function.bindings.process-out-0=output",
+			"--spring.cloud.stream.bindings.input.destination=in",
+			"--spring.cloud.stream.bindings.output.destination=out",
+			"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde="
+				+ "org.apache.kafka.common.serialization.Serdes$StringSerde",
+			"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde="
+				+ "org.apache.kafka.common.serialization.Serdes$StringSerde",
+			"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId="
+				+ "ApplicationHealthTest-unreachable",
+			"--spring.cloud.stream.kafka.binder.healthTimeout=1",
+			"--spring.cloud.stream.kafka.streams.binder.brokers=localhost:65535");
 	}
 
 	private ConfigurableApplicationContext multipleStream() {
