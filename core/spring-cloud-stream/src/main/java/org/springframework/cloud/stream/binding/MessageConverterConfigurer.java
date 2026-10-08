@@ -203,13 +203,6 @@ public class MessageConverterConfigurer
 		return function;
 	}
 
-	private void skipOutputConversionIfNecessary(String functionName) {
-		FunctionInvocationWrapper function = retrieveFunction(functionName);
-		if (function != null) {
-			function.setSkipOutputConversion(true);
-		}
-	}
-
 	private boolean isNativeEncodingNotSet(ProducerProperties producerProperties,
 			ConsumerProperties consumerProperties, boolean input) {
 		if (input) {

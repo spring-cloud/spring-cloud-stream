@@ -113,9 +113,6 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	 */
 	public static final MimeType DEFAULT_AVRO_MIME_TYPE = new MimeType("application", "*+" + AVRO_FORMAT);
 
-	private static final AvroSchemaServiceManager defaultAvroSchemaServiceManager =
-		new AvroSchemaServiceManagerImpl();
-
 	private final CacheManager cacheManager;
 
 	protected Resource[] schemaImports = new Resource[]{};

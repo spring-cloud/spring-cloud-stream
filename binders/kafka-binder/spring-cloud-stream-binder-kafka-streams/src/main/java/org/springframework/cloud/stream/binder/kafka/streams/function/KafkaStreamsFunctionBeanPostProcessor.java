@@ -282,11 +282,6 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 		kafkaStreamsOnlyResolvableTypes.put(key, resolvableType);
 	}
 
-	private void discoverOnlyKafkaStreamsResolvableTypesAndMethods(String key, ResolvableType resolvableType, Method method) {
-		kafkaStreamsOnlyResolvableTypes.put(key, resolvableType);
-		kafakStreamsOnlyMethods.put(key, method);
-	}
-
 	private void addResolvableTypeInfo(String key, Method method) {
 		if (kafakStreamsOnlyMethods.size() == 1) {
 			this.methods.put(key, method);
