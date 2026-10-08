@@ -34,7 +34,9 @@ import org.springframework.cloud.bus.event.RemoteApplicationEvent;
 import org.springframework.cloud.bus.event.SentApplicationEvent;
 import org.springframework.cloud.bus.event.ShutdownListener;
 import org.springframework.cloud.bus.event.ShutdownRemoteApplicationEvent;
+import org.springframework.cloud.bus.event.TraceListener;
 import org.springframework.cloud.bus.event.UnknownRemoteApplicationEvent;
+import org.springframework.cloud.bus.trace.TraceRepository;
 import org.springframework.cloud.context.refresh.ContextRefresher;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.cloud.stream.config.BindingProperties;
@@ -317,6 +319,20 @@ public class BusAutoConfigurationTests {
 		assertThat(newServiceId).isEqualTo(originalServiceId);
 	}
 
+	@Test
+	public void traceRepositoryBeanShouldBeAvailable() {
+
+		AckRemoteApplicationEvent event = new AckRemoteApplicationEvent(this, "foo",
+				new PathDestinationFactory().getDestination(null), "ID", "bar", RemoteApplicationEvent.class);
+		this.context = SpringApplication.run(new Class[] { TraceConfiguration.class }, new String[] {
+				"--spring.cloud.bus.trace.enabled=true", "--management.endpoints.web.exposure.include=bustrace" });
+		this.context.publishEvent(event);
+
+		assertThat(context.getBean(TraceListener.class)).isNotNull();
+		assertThat(context.getBean(TraceRepository.class)).isNotNull();
+		assertThat(context.getBean(TraceRepository.class).findAll()).hasSize(1);
+	}
+
 	@Configuration(proxyBeanMethods = false)
 	@EnableAutoConfiguration
 	protected static class RefreshConfig {
@@ -429,6 +445,14 @@ public class BusAutoConfigurationTests {
 			this.count++;
 			latch.countDown();
 		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@EnableAutoConfiguration
+	@ImportAutoConfiguration({ BusAutoConfiguration.class, TestChannelBinderConfiguration.class,
+			PropertyPlaceholderAutoConfiguration.class })
+	protected static class TraceConfiguration {
 
 	}
 
