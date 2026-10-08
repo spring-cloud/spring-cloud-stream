@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.binder.test;
 
 import java.util.function.Consumer;
 
-import org.reactivestreams.Subscription;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
@@ -29,8 +28,6 @@ import org.springframework.cloud.stream.binder.test.TestChannelBinderProvisioner
 import org.springframework.cloud.stream.binder.test.TestChannelBinderProvisioner.SpringIntegrationProducerDestination;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 import org.springframework.core.retry.RetryException;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.acks.AcknowledgmentCallback;

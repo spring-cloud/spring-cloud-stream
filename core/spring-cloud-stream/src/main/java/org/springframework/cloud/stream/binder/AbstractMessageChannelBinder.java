@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
