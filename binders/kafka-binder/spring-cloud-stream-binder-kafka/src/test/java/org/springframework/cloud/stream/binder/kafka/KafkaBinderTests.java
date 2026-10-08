@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
