@@ -43,8 +43,6 @@ import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.PassThruFunction;
 import org.springframework.cloud.function.core.FunctionInvocationHelper;
-import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.BinderWrapper;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binding.BindingService;
@@ -324,14 +322,6 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 			messageChannel
 				.addInterceptor(new DefaultPartitioningInterceptor(bindingProperties, this.applicationContext.getBeanFactory()));
 		}
-	}
-
-	private String resolveBinderTargetType(String channelName, String binderName, Class<?> bindableType, BinderFactory binderFactory) {
-		String binderConfigurationName = binderName != null ? binderName : this.bindingServiceProperties
-				.getBinder(channelName);
-		Binder<?, ?, ?> binder = binderFactory.getBinder(binderConfigurationName, bindableType);
-		String targetProtocol = binder.getClass().getSimpleName().startsWith("Rabbit") ? "amqp" : "kafka";
-		return targetProtocol;
 	}
 
 	private void addGlobalChannelInterceptorProcessor(AbstractMessageChannel messageChannel, String destinationName) {

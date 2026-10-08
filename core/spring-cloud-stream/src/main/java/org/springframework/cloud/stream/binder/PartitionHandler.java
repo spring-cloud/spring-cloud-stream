@@ -16,17 +16,13 @@
 
 package org.springframework.cloud.stream.binder;
 
-import java.lang.reflect.Field;
 import java.util.Map;
 
-import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.messaging.Message;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -184,18 +180,6 @@ public class PartitionHandler {
 					: selectors.values().iterator().next();
 		}
 		return partitionSelector;
-	}
-
-	private static BeanFactory extractBeanFactoryFromEvaluationContext(EvaluationContext evaluationContext) {
-		try {
-			Field field = ReflectionUtils.findField(BeanFactoryResolver.class, "beanFactory");
-			field.setAccessible(true);
-			return (BeanFactory) field.get(evaluationContext);
-		}
-		catch (Exception e) {
-			throw new RuntimeException("Failed to extract beanFactory from EvaluationContext. Please use different constructor"
-					+ " which allows you to pass the instance of the beanFactory.");
-		}
 	}
 
 	/**

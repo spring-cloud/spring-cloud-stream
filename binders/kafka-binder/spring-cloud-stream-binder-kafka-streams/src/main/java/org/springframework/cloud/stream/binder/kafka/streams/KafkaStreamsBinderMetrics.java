@@ -22,8 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.ToDoubleFunction;
 
@@ -81,8 +79,6 @@ public class KafkaStreamsBinderMetrics {
 	private final MeterRegistry meterRegistry;
 
 	private MeterBinder meterBinder;
-
-	private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
 	private volatile Set<MetricName> currentMeters = new HashSet<>();
 

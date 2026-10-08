@@ -35,7 +35,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Soby Chacko
  * @author Steven Gantz
- * @sinc 4.1.0
+ * @since 4.1.0
  */
 public class DltAwareProcessor<KIn, VIn, KOut, VOut> extends RecordRecoverableProcessor<KIn, VIn, KOut, VOut> {
 
@@ -50,11 +50,6 @@ public class DltAwareProcessor<KIn, VIn, KOut, VOut> extends RecordRecoverablePr
 	 * {@link DltPublishingContext} used for DLT publishing needs.
 	 */
 	private final DltPublishingContext dltPublishingContext;
-
-	/**
-	 * A {@link BiConsumer} that does the recovery of a failed record.
-	 */
-	private BiConsumer<Record<KIn, VIn>, Exception> processorRecordRecoverer;
 
 	/**
 	 *
