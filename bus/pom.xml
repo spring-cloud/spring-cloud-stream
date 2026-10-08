@@ -23,6 +23,7 @@
 		<module>spring-cloud-starter-bus-amqp</module>
 		<module>spring-cloud-starter-bus-kafka</module>
 		<module>spring-cloud-starter-bus-stream</module>
+		<module>spring-cloud-starter-bus-jgroups</module>
 	</modules>
 
 	<licenses>
@@ -76,6 +77,11 @@
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream</artifactId>
 				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jgroups</groupId>
+				<artifactId>jgroups</artifactId>
+				<version>5.5.7.Final</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
