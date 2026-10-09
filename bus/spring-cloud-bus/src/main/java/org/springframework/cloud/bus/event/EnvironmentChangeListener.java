@@ -41,14 +41,15 @@ public class EnvironmentChangeListener implements ApplicationListener<Environmen
 
 	@Override
 	public void onApplicationEvent(EnvironmentChangeRemoteApplicationEvent event) {
-		if (!this.serviceMatcher.isForSelf(event)) {
-			log.info("Environment change not performed, the event was targeting " + event.getDestinationService());
-			return;
+		if (this.serviceMatcher.isForSelf(event)) {
+			Map<String, String> values = event.getValues();
+			log.info("Received remote environment change request. Keys/values to update " + values);
+			for (Map.Entry<String, String> entry : values.entrySet()) {
+				this.env.setProperty(entry.getKey(), entry.getValue());
+			}
 		}
-		Map<String, String> values = event.getValues();
-		log.info("Received remote environment change request. Keys/values to update " + values);
-		for (Map.Entry<String, String> entry : values.entrySet()) {
-			this.env.setProperty(entry.getKey(), entry.getValue());
+		else {
+			log.info("Environment change not performed, the event was targeting " + event.getDestinationService());
 		}
 	}
 
