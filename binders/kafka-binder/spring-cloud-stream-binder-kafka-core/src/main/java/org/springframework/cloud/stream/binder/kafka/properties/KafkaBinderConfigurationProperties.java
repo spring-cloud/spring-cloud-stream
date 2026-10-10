@@ -131,7 +131,7 @@ public class KafkaBinderConfigurationProperties {
 
 	/**
 	 * Time between retries after AuthorizationException is caught in
-	 * the ListenerContainer; defalt is null which disables retries.
+	 * the ListenerContainer; default is null which disables retries.
 	 * For more info see: {@link org.springframework.kafka.listener.ConsumerProperties#setAuthorizationExceptionRetryInterval(java.time.Duration)}
 	 */
 	private Duration authorizationExceptionRetryInterval;

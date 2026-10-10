@@ -39,7 +39,7 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 	private AcknowledgeMode acknowledgeMode = AcknowledgeMode.AUTO;
 
 	/**
-	 * maxumum concurrency of this consumer (threads).
+	 * maximum concurrency of this consumer (threads).
 	 */
 	private int maxConcurrency = 1;
 
@@ -66,7 +66,7 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 	/**
 	 * when republishing to the DLQ, the delivery mode to use.
 	 */
-	private MessageDeliveryMode republishDeliveyMode = MessageDeliveryMode.PERSISTENT;
+	private MessageDeliveryMode republishDeliveryMode = MessageDeliveryMode.PERSISTENT;
 
 	/**
 	 * true to requeue rejected messages, false to discard (or route to DLQ).
@@ -222,12 +222,36 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 		return requeueRejected;
 	}
 
+	/**
+	 * @return the message delivery mode used when republishing.
+	 * @deprecated use {@link #getRepublishDeliveryMode()} instead.
+	 */
+	@Deprecated(forRemoval = true)
 	public MessageDeliveryMode getRepublishDeliveyMode() {
-		return this.republishDeliveyMode;
+		return this.republishDeliveryMode;
 	}
 
-	public void setRepublishDeliveyMode(MessageDeliveryMode republishDeliveyMode) {
-		this.republishDeliveyMode = republishDeliveyMode;
+	/**
+	 * @param republishDeliveryMode the message delivery mode to use when republishing.
+	 * @deprecated use {@link #setRepublishDeliveryMode(MessageDeliveryMode)} instead.
+	 */
+	@Deprecated(forRemoval = true)
+	public void setRepublishDeliveyMode(MessageDeliveryMode republishDeliveryMode) {
+		this.republishDeliveryMode = republishDeliveryMode;
+	}
+
+	/**
+	 * @return the message delivery mode used when republishing.
+	 */
+	public MessageDeliveryMode getRepublishDeliveryMode() {
+		return this.republishDeliveryMode;
+	}
+
+	/**
+	 * @param republishDeliveryMode the message delivery mode to use when republishing.
+	 */
+	public void setRepublishDeliveryMode(MessageDeliveryMode republishDeliveryMode) {
+		this.republishDeliveryMode = republishDeliveryMode;
 	}
 
 	public void setRequeueRejected(boolean requeueRejected) {

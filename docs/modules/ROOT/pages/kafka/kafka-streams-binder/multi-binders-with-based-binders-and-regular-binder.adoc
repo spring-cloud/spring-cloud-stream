@@ -61,12 +61,12 @@ spring.cloud.stream.bindings.kstreamProcess-out-0.binder=kafka3
 
 Pay attention to the above configuration.
 We have two kinds of binders, but 3 binders all in all, first one is the regular Kafka  binder based on cluster 1 (`kafka1`), then another Kafka binder based on cluster 2 (`kafka2`) and finally the `kstream` one (`kafka3`).
-The first processor in the application receives data from  `kafka1` and publishes to `kafka2` where both binders are based on regular Kafka binder but differnt clusters.
+The first processor in the application receives data from  `kafka1` and publishes to `kafka2` where both binders are based on regular Kafka binder but different clusters.
 The second processor, which is a Kafka Streams processor consumes data from `kafka3` which is the same cluster as `kafka2`, but a different binder type.
 
 Since there are three different binder types available in the Kafka Streams family of binders - `kstream`, `ktable` and `globalktable` - if your application has multiple bindings based on any of these binders, that needs to be explicitly provided as the binder type.
 
-For e.g if you have a processor as below,
+For e.g. if you have a processor as below,
 
 ```
 @Bean

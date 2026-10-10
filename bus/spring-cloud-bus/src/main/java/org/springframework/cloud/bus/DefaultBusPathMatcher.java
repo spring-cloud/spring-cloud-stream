@@ -41,10 +41,10 @@ public class DefaultBusPathMatcher implements PathMatcher {
 
 	private static final Log log = LogFactory.getLog(DefaultBusPathMatcher.class);
 
-	private final PathMatcher delagateMatcher;
+	private final PathMatcher delegateMatcher;
 
-	public DefaultBusPathMatcher(PathMatcher delagateMatcher) {
-		this.delagateMatcher = delagateMatcher;
+	public DefaultBusPathMatcher(PathMatcher delegateMatcher) {
+		this.delegateMatcher = delegateMatcher;
 	}
 
 	protected boolean matchMultiProfile(String pattern, String idToMatch) {
@@ -83,7 +83,7 @@ public class DefaultBusPathMatcher implements PathMatcher {
 		}
 
 		for (String id : idsWithSingleProfile) {
-			if (this.delagateMatcher.match(pattern, id)) {
+			if (this.delegateMatcher.match(pattern, id)) {
 				if (log.isDebugEnabled()) {
 					log.debug("matched true");
 				}
@@ -99,7 +99,7 @@ public class DefaultBusPathMatcher implements PathMatcher {
 
 	@Override
 	public boolean isPattern(String path) {
-		return this.delagateMatcher.isPattern(path);
+		return this.delegateMatcher.isPattern(path);
 	}
 
 	@Override
@@ -107,7 +107,7 @@ public class DefaultBusPathMatcher implements PathMatcher {
 		if (log.isDebugEnabled()) {
 			log.debug("In match: " + pattern + ", " + path);
 		}
-		if (!this.delagateMatcher.match(pattern, path)) {
+		if (!this.delegateMatcher.match(pattern, path)) {
 			return matchMultiProfile(pattern, path);
 		}
 		return true;
@@ -115,27 +115,27 @@ public class DefaultBusPathMatcher implements PathMatcher {
 
 	@Override
 	public boolean matchStart(String pattern, String path) {
-		return this.delagateMatcher.matchStart(pattern, path);
+		return this.delegateMatcher.matchStart(pattern, path);
 	}
 
 	@Override
 	public String extractPathWithinPattern(String pattern, String path) {
-		return this.delagateMatcher.extractPathWithinPattern(pattern, path);
+		return this.delegateMatcher.extractPathWithinPattern(pattern, path);
 	}
 
 	@Override
 	public Map<String, String> extractUriTemplateVariables(String pattern, String path) {
-		return this.delagateMatcher.extractUriTemplateVariables(pattern, path);
+		return this.delegateMatcher.extractUriTemplateVariables(pattern, path);
 	}
 
 	@Override
 	public Comparator<String> getPatternComparator(String path) {
-		return this.delagateMatcher.getPatternComparator(path);
+		return this.delegateMatcher.getPatternComparator(path);
 	}
 
 	@Override
 	public String combine(String pattern1, String pattern2) {
-		return this.delagateMatcher.combine(pattern1, pattern2);
+		return this.delegateMatcher.combine(pattern1, pattern2);
 	}
 
 }

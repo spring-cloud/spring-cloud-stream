@@ -93,7 +93,7 @@ import org.springframework.messaging.converter.MessageConverter;
 public class KafkaBinderConfiguration {
 
 	/**
-	 * @ConfigurationProperties is declared on the @Bean method for Spring Boot to ignore
+	 * {@code @ConfigurationProperties} is declared on the @Bean method for Spring Boot to ignore
 	 * constructor binding on KafkaBinderConfigurationProperties. If constructor binding is
 	 * used, it ignores all the JavaBeans style properties when generating configuration metadata.
 	 *

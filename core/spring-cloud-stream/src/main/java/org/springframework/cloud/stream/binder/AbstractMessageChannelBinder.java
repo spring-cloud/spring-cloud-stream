@@ -477,7 +477,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * the binder must wire this channel into the producer endpoint so that errors are
 	 * forwarded to it.
 	 * @return the message handler for sending data to the target middleware
-	 * @throws Exception when producer messsage handler failed to be created
+	 * @throws Exception when producer message handler failed to be created
 	 */
 	protected MessageHandler createProducerMessageHandler(ProducerDestination destination,
 			P producerProperties, MessageChannel channel, MessageChannel errorChannel)
