@@ -78,7 +78,7 @@ public class KeyValueSerdeResolver implements ApplicationContextAware {
 	 * Provide the {@link Serde} for inbound key.
 	 * @param extendedConsumerProperties binding level extended
 	 * {@link KafkaStreamsConsumerProperties}
-	 * @return configurd {@link Serde} for the inbound key.
+	 * @return configured {@link Serde} for the inbound key.
 	 */
 	public Serde<?> getInboundKeySerde(
 			KafkaStreamsConsumerProperties extendedConsumerProperties) {
@@ -99,7 +99,7 @@ public class KeyValueSerdeResolver implements ApplicationContextAware {
 	 * @param consumerProperties {@link ConsumerProperties} on binding
 	 * @param extendedConsumerProperties binding level extended
 	 * {@link KafkaStreamsConsumerProperties}
-	 * @return configurd {@link Serde} for the inbound value.
+	 * @return configured {@link Serde} for the inbound value.
 	 */
 	public Serde<?> getInboundValueSerde(ConsumerProperties consumerProperties,
 			KafkaStreamsConsumerProperties extendedConsumerProperties) {
@@ -143,7 +143,7 @@ public class KeyValueSerdeResolver implements ApplicationContextAware {
 	/**
 	 * Provide the {@link Serde} for outbound key.
 	 * @param properties binding level extended {@link KafkaStreamsProducerProperties}
-	 * @return configurd {@link Serde} for the outbound key.
+	 * @return configured {@link Serde} for the outbound key.
 	 */
 	public Serde<?> getOuboundKeySerde(KafkaStreamsProducerProperties properties) {
 		return getKeySerde(properties.getKeySerde(), properties.getConfiguration());
@@ -159,7 +159,7 @@ public class KeyValueSerdeResolver implements ApplicationContextAware {
 	 * @param producerProperties {@link ProducerProperties} on binding
 	 * @param kafkaStreamsProducerProperties binding level extended
 	 * {@link KafkaStreamsProducerProperties}
-	 * @return configurd {@link Serde} for the outbound value.
+	 * @return configured {@link Serde} for the outbound value.
 	 */
 	public Serde<?> getOutboundValueSerde(ProducerProperties producerProperties,
 			KafkaStreamsProducerProperties kafkaStreamsProducerProperties) {
@@ -246,7 +246,7 @@ public class KeyValueSerdeResolver implements ApplicationContextAware {
 			else {
 				keySerde = Serdes.ByteArray();
 				if (resolvableType != null &&
-						(isResolvalbeKafkaStreamsType(resolvableType) || isResolvableKStreamArrayType(resolvableType))) {
+						(isResolvableKafkaStreamsType(resolvableType) || isResolvableKStreamArrayType(resolvableType))) {
 					ResolvableType targetType = resolvableType.isArray() ? resolvableType.getComponentType().getGeneric(0) : resolvableType.getGeneric(0);
 					Serde<?> fallbackSerde = getFallbackSerde("default.key.serde");
 					keySerde = SerdeResolverUtils.resolveForType(this.context, targetType, fallbackSerde);
@@ -265,7 +265,7 @@ public class KeyValueSerdeResolver implements ApplicationContextAware {
 				KStream.class.isAssignableFrom(Objects.requireNonNull(resolvableType.getComponentType().getRawClass()));
 	}
 
-	private boolean isResolvalbeKafkaStreamsType(ResolvableType resolvableType) {
+	private boolean isResolvableKafkaStreamsType(ResolvableType resolvableType) {
 		return resolvableType.getRawClass() != null && (KStream.class.isAssignableFrom(resolvableType.getRawClass()) || KTable.class.isAssignableFrom(resolvableType.getRawClass()) ||
 				GlobalKTable.class.isAssignableFrom(resolvableType.getRawClass()));
 	}
@@ -300,7 +300,7 @@ public class KeyValueSerdeResolver implements ApplicationContextAware {
 		}
 		else {
 			valueSerde = Serdes.ByteArray();
-			if (resolvableType != null && ((isResolvalbeKafkaStreamsType(resolvableType)) ||
+			if (resolvableType != null && ((isResolvableKafkaStreamsType(resolvableType)) ||
 					(isResolvableKStreamArrayType(resolvableType)))) {
 				ResolvableType targetType = resolvableType.isArray() ? resolvableType.getComponentType().getGeneric(1) : resolvableType.getGeneric(1);
 				Serde<?> fallbackSerde = getFallbackSerde("default.value.serde");

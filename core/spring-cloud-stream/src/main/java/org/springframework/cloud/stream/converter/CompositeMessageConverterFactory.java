@@ -144,7 +144,7 @@ public class CompositeMessageConverterFactory {
 			}
 			else {
 				if (this.log.isDebugEnabled()) {
-					this.log.debug("Ommitted " + converter + " of type "
+					this.log.debug("Omitted " + converter + " of type "
 							+ converter.getClass().toString() + " for '"
 							+ mimeType.toString()
 							+ "' as it is not an AbstractMessageConverter");

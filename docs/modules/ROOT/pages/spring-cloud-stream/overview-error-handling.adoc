@@ -22,7 +22,7 @@ That is because anything you read later in this section with regard to Retry Tem
 DLQ and configuration properties that assist with all of it ***only*** applies to Message handlers (i.e., imperative functions).
 
 Reactive API provides a very rich library of its own operators and mechanisms to assist you with error handling specific to 
-variety of reactive uses cases which are far more complex then simple Message handler cases, So use them, such 
+variety of reactive uses cases which are far more complex than simple Message handler cases, So use them, such
 as `public final Flux<T> retryWhen(Retry retrySpec);` that you can find in `reactor.core.publisher.Flux`.
 
 [source,java]

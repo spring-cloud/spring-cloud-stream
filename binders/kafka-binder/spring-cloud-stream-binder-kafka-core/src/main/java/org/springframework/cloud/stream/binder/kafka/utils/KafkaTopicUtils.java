@@ -19,7 +19,7 @@ package org.springframework.cloud.stream.binder.kafka.utils;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Utility methods releated to Kafka topics.
+ * Utility methods related to Kafka topics.
  *
  * @author Soby Chacko
  */

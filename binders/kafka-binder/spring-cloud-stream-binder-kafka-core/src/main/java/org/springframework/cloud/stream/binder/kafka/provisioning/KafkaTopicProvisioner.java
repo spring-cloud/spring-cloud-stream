@@ -134,7 +134,7 @@ public class KafkaTopicProvisioner implements
 	 * Create an instance.
 	 * @param kafkaBinderConfigurationProperties the binder configuration properties.
 	 * @param kafkaProperties the boot Kafka properties used to build the instance.
-	 * @parak kafkaConnectionDetails the Kafka connection details used to build the instance
+	 * @param kafkaConnectionDetails the Kafka connection details used to build the instance
 	 * @param adminClientConfigCustomizer to customize {@link AdminClient}.
 	 * @since 4.1.4
 	 */
@@ -166,7 +166,7 @@ public class KafkaTopicProvisioner implements
 	 *
 	 * @param kafkaBinderConfigurationProperties the binder configuration properties.
 	 * @param kafkaProperties the boot Kafka properties used to build the instance.
-	 * @param kafkaConnectionDetails the Kafka connection deatils used to build the instance.
+	 * @param kafkaConnectionDetails the Kafka connection details used to build the instance.
 	 * @param adminClientConfigCustomizers to customize {@link AdminClient}.
 	 * @since 4.1.4
 	 */
@@ -178,7 +178,7 @@ public class KafkaTopicProvisioner implements
 		Assert.isTrue(kafkaProperties != null, "KafkaProperties cannot be null");
 		this.configurationProperties = kafkaBinderConfigurationProperties;
 		this.adminClientProperties = createAdminClientProperties(kafkaProperties, kafkaConnectionDetails);
-		normalalizeBootPropsWithBinder(this.adminClientProperties, kafkaProperties,
+		normalizeBootPropsWithBinder(this.adminClientProperties, kafkaProperties,
 			kafkaBinderConfigurationProperties);
 		// If the application provides AdminConfig customizers
 		// and overrides properties, those take precedence.
@@ -337,8 +337,24 @@ public class KafkaTopicProvisioner implements
 	 * @param adminProps the admin properties to normalize.
 	 * @param bootProps the boot kafka properties.
 	 * @param binderProps the binder kafka properties.
+	 * @deprecated use {@link #normalizeBootPropsWithBinder(Map, KafkaProperties, KafkaBinderConfigurationProperties)} instead.
 	 */
+	@Deprecated(forRemoval = true)
 	public static void normalalizeBootPropsWithBinder(Map<String, Object> adminProps,
+			KafkaProperties bootProps, KafkaBinderConfigurationProperties binderProps) {
+		normalizeBootPropsWithBinder(adminProps, bootProps, binderProps);
+	}
+
+	/**
+	 * In general, binder properties supersede boot kafka properties. The one exception is
+	 * the bootstrap servers. In that case, we should only override the boot properties if
+	 * (there is a binder property AND it is a non-default value) OR (if there is no boot
+	 * property); this is needed because the binder property never returns a null value.
+	 * @param adminProps the admin properties to normalize.
+	 * @param bootProps the boot kafka properties.
+	 * @param binderProps the binder kafka properties.
+	 */
+	public static void normalizeBootPropsWithBinder(Map<String, Object> adminProps,
 			KafkaProperties bootProps, KafkaBinderConfigurationProperties binderProps) {
 		// First deal with the outlier
 		String kafkaConnectionString = binderProps.getKafkaConnectionString();

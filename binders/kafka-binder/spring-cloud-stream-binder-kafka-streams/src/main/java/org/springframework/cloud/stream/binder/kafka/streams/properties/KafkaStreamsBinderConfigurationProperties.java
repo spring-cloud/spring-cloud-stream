@@ -124,7 +124,7 @@ public class KafkaStreamsBinderConfigurationProperties
 		private String applicationId;
 
 		/**
-		 * Funcion specific configuraiton to use.
+		 * Function specific configuration to use.
 		 */
 		private Map<String, String> configuration;
 

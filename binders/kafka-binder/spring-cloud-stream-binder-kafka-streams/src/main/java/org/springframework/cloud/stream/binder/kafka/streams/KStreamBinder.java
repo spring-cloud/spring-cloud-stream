@@ -49,7 +49,7 @@ import org.springframework.util.StringUtils;
 
 /**
  * {@link org.springframework.cloud.stream.binder.Binder} implementation for
- * {@link KStream}. This implemenation extends from the {@link AbstractBinder} directly.
+ * {@link KStream}. This implementation extends from the {@link AbstractBinder} directly.
  * <p>
  * Provides both producer and consumer bindings for the bound KStream.
  *

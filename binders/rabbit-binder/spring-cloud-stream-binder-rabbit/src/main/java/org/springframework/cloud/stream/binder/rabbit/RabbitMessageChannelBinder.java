@@ -661,7 +661,7 @@ public class RabbitMessageChannelBinder extends
 			ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties) {
 
 		Assert.isTrue(!consumerProperties.isMultiplex(),
-				"The Spring Integration polled MessageSource does not currently support muiltiple queues");
+				"The Spring Integration polled MessageSource does not currently support multiple queues");
 		AmqpMessageSource source = new AmqpMessageSource(this.connectionFactory,
 				destination.getName());
 		source.setRawMessageHeader(true);
@@ -815,9 +815,9 @@ public class RabbitMessageChannelBinder extends
 							messageProperties.getReceivedExchange());
 					headers.put(RepublishMessageRecoverer.X_ORIGINAL_ROUTING_KEY,
 							messageProperties.getReceivedRoutingKey());
-					if (properties.getExtension().getRepublishDeliveyMode() != null) {
+					if (properties.getExtension().getRepublishDeliveryMode() != null) {
 						messageProperties.setDeliveryMode(
-								properties.getExtension().getRepublishDeliveyMode());
+								properties.getExtension().getRepublishDeliveryMode());
 					}
 					messageProperties.incrementRetryCount();
 					return messageProperties;
@@ -890,7 +890,7 @@ public class RabbitMessageChannelBinder extends
 				 * Traverse the cause tree, stopping at AmqpRejectAndDontRequeueException
 				 * or ImmediateAcknowledgeAmqpException.
 				 * @param throwable the throwable.
-				 * @return true if neither found or AmqpRejectAndDontRequeueException is
+				 * @return true if neither found nor AmqpRejectAndDontRequeueException is
 				 * found first.
 				 */
 				private boolean shouldRepublish(Throwable throwable) {

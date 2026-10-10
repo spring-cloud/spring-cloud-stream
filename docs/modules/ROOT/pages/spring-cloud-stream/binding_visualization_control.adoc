@@ -50,7 +50,7 @@ bindingProperties.setConsumer(consumerProperties);
 RabbitConsumerProperties extendedConsumerProperties = controller.createInputBinding(inputName, "rabbit", bindingProperties);
 ----
 
-You can than manage its properties by calling `getExtensionProperties(..)` method.
+You can manage its properties by calling `getExtensionProperties(..)` method.
 
 [source,java]
 ----

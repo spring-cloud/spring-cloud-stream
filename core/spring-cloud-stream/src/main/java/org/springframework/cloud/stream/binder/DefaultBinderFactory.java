@@ -358,7 +358,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	 * Return true if the binder is a {@link PollableConsumerBinder} and the target type
 	 * is a {@link PollableSource} and their generic types match (e.g. MessageHandler), OR
 	 * if it's a {@link Binder} and the target matches the binder's generic type.
-	 * @param <T> bindng target type
+	 * @param <T> binding target type
 	 * @param binderInstance the binder.
 	 * @param bindingTargetType the binding target type.
 	 * @return true if the conditions match.
@@ -385,7 +385,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 				if (binderConfiguration != null) {
 					this.flatten(null, binderConfiguration.getProperties(), binderProperties);
 				}
-				binderProducingContext = this.createUnitializedContextForAOT(configurationName, binderProperties, binderConfiguration);
+				binderProducingContext = this.createInitializedContextForAOT(configurationName, binderProperties, binderConfiguration);
 				this.binderChildContextInitializers.get(configurationName).initialize(binderProducingContext);
 				registerOuterContextBean(binderProperties, binderProducingContext);
 				binderProducingContext.refresh();
@@ -611,7 +611,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	 * @param binderConfiguration binder configuration
 	 * @return a binder child application context suitable for AOT initialization
 	 */
-	GenericApplicationContext createUnitializedContextForAOT(String configurationName,
+	GenericApplicationContext createInitializedContextForAOT(String configurationName,
 			Map<String, Object> binderProperties, BinderConfiguration binderConfiguration) {
 		GenericApplicationContext binderContext = new GenericApplicationContext();
 		// Set the conversion service on the binder producing context to handle complex properties

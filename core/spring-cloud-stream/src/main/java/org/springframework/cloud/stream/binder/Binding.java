@@ -83,7 +83,7 @@ public interface Binding<T> extends Pausable {
 	}
 
 	/**
-	 * Will always return false unless overriden.
+	 * Will always return false unless overridden.
 	 */
 	@Override
 	default boolean isPaused() {

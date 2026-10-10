@@ -60,7 +60,7 @@ public class RabbitExpressionEvaluatingInterceptor implements ChannelInterceptor
 	/**
 	 * Construct an instance with the provided expressions and evaluation context. At
 	 * least one expression muse be non-null.
-	 * @param routingKeyExpression the routing key expresssion.
+	 * @param routingKeyExpression the routing key expression.
 	 * @param delayExpression the delay expression.
 	 * @param evaluationContext the evaluation context.
 	 */

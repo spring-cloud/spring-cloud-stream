@@ -61,7 +61,7 @@ public abstract class EmbeddedHeaderUtils {
 	 * been embedded into the new message payload.
 	 *
 	 * @param original original message
-	 * @param headers  headers to embedd
+	 * @param headers  headers to embedded
 	 * @return a new message
 	 */
 	public static byte[] embedHeaders(MessageValues original, String... headers) {
