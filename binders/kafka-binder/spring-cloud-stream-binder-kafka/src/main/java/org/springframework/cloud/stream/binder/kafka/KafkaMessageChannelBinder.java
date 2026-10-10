@@ -1016,7 +1016,7 @@ public class KafkaMessageChannelBinder extends
 	}
 
 	/*
-	 * Reset the offsets if needed; may update the offsets in in the container's
+	 * Reset the offsets if needed; may update the offsets in the container's
 	 * topicPartitionInitialOffsets.
 	 */
 	private void resetOffsetsForAutoRebalance(
