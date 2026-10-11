@@ -160,8 +160,11 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 					if (logger.isDebugEnabled()) {
 						logger.debug("Removing message channel from cache " + eldest.getKey());
 					}
-					if (!configuredBindingNames.contains(eldest.getKey())) {
-						bindingServiceProperties.getBindings().remove(eldest.getKey());
+					// The cache key is prefixed with the binder name when one is used, while the
+					// binding properties are keyed by the binding name the channel was created for.
+					String bindingName = ((AbstractMessageChannel) eldest.getValue()).getComponentName();
+					if (!configuredBindingNames.contains(bindingName)) {
+						bindingServiceProperties.getBindings().remove(bindingName);
 					}
 					bindingService.unbindProducers(eldest.getKey());
 				}
