@@ -882,6 +882,25 @@ class StreamBridgeTests {
 	}
 
 	@Test
+	void bindingsWithBinderNameAreRemovedWithCache() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+			.getCompleteConfiguration(InterceptorConfiguration.class))
+			.web(WebApplicationType.NONE).run(
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.dynamic-destination-cache-size=1",
+				"--spring.cloud.stream.binders.kafka1.type=kafka"
+			)) {
+			StreamBridge bridge = context.getBean(StreamBridge.class);
+			bridge.send("binding1", "kafka1", "hello");
+			bridge.send("binding2", "kafka1", "hello");
+			bridge.send("binding3", "kafka1", "hello");
+
+			BindingServiceProperties bindingServiceProp = context.getBean(BindingServiceProperties.class);
+			assertThat(bindingServiceProp.getBindings()).containsOnlyKeys("binding3");
+		}
+	}
+
+	@Test
 	void withIntegrationFlowBecauseMarcinSaidSo() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(IntegrationFlowConfiguration.class))
