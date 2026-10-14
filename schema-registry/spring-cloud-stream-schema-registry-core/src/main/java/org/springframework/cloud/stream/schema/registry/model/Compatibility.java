@@ -22,7 +22,7 @@ package org.springframework.cloud.stream.schema.registry.model;
 public enum Compatibility {
 
 	/**
-	 * Backward compatibiltity.
+	 * Backward compatibility.
 	 */
 	BACKWARD,
 

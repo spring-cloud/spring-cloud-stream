@@ -26,7 +26,7 @@ import org.springframework.cloud.stream.schema.registry.config.SchemaServerConfi
 import org.springframework.context.annotation.Import;
 
 /**
- * Enables the schema registry server enpoints.
+ * Enables the schema registry server endpoints.
  *
  * @author Vinicius Carvalho
  */
