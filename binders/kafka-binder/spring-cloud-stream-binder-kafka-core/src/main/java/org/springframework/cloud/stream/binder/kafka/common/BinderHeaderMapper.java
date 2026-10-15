@@ -386,13 +386,7 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 			if (lastDot < 0) {
 				return false;
 			}
-			String packageName = requestedType.substring(0, lastDot);
-			for (String trustedPackage : this.trustedPackages) {
-				if (packageName.equals(trustedPackage) || packageName.startsWith(trustedPackage + ".")) {
-					return true;
-				}
-			}
-			return false;
+			return this.trustedPackages.contains(requestedType.substring(0, lastDot));
 		}
 		return true;
 	}
