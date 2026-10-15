@@ -1757,7 +1757,17 @@ public class KafkaMessageChannelBinder extends
 			finally {
 				if (ackMode == ContainerProperties.AckMode.MANUAL
 						|| ackMode == ContainerProperties.AckMode.MANUAL_IMMEDIATE) {
-					messageHeaders.get(KafkaHeaders.ACKNOWLEDGMENT, Acknowledgment.class).acknowledge();
+					Acknowledgment acknowledgment = messageHeaders.get(KafkaHeaders.ACKNOWLEDGMENT, Acknowledgment.class);
+					if (acknowledgment != null) {
+						acknowledgment.acknowledge();
+					}
+					else {
+						// Can happen when the error message does not carry the original
+						// message's headers (e.g. no original message available), so the
+						// Acknowledgment is not reachable here; log instead of throwing an NPE.
+						KafkaMessageChannelBinder.this.logger.warn("No Acknowledgment header available; "
+								+ "could not acknowledge the record sent to DLQ " + sb);
+					}
 				}
 			}
 		}
