@@ -196,16 +196,24 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 		String kafkaConnectionString = configProperties.getKafkaConnectionString();
 
 		if (kafkaConnectionString != null && kafkaConnectionString.equals("localhost:9092")) {
+			Binder binder = Binder.get(environment);
 			//Making sure that the application indeed set a property.
-			String kafkaStreamsBinderBroker = environment.getProperty("spring.cloud.stream.kafka.streams.binder.brokers");
+			String[] kafkaStreamsBinderBrokers = binder.bind("spring.cloud.stream.kafka.streams.binder.brokers",
+					String[].class).orElse(null);
+			String kafkaStreamsBinderBroker = ObjectUtils.isEmpty(kafkaStreamsBinderBrokers) ? null
+					: StringUtils.arrayToCommaDelimitedString(kafkaStreamsBinderBrokers);
 
 			if (!StringUtils.hasText(kafkaStreamsBinderBroker)) {
 				//Kafka Streams binder specific property for brokers is not set by the application.
 				//See if there is one configured at the kafka binder level.
-				String kafkaBinderBroker = environment.getProperty("spring.cloud.stream.kafka.binder.brokers");
-				if (StringUtils.hasText(kafkaBinderBroker)) {
-					kafkaConnectionString = kafkaBinderBroker;
-					configProperties.setBrokers(kafkaConnectionString);
+				String[] kafkaBinderBrokers = binder.bind("spring.cloud.stream.kafka.binder.brokers",
+						String[].class).orElse(null);
+				if (!ObjectUtils.isEmpty(kafkaBinderBrokers)) {
+					String kafkaBinderBroker = StringUtils.arrayToCommaDelimitedString(kafkaBinderBrokers);
+					if (StringUtils.hasText(kafkaBinderBroker)) {
+						kafkaConnectionString = kafkaBinderBroker;
+						configProperties.setBrokers(kafkaBinderBrokers);
+					}
 				}
 			}
 		}
