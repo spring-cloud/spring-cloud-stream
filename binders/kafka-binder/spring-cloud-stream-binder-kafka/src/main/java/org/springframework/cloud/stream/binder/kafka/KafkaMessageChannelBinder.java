@@ -566,6 +566,10 @@ public class KafkaMessageChannelBinder extends
 				props);
 		if (transactionIdPrefix != null) {
 			producerFactory.setTransactionIdPrefix(transactionIdPrefix);
+			Duration maxAge = this.configurationProperties.getTransaction().getMaxAge();
+			if (maxAge != null) {
+				producerFactory.setMaxAge(maxAge);
+			}
 		}
 		if (kafkaProducerProperties.getCloseTimeout() > 0) {
 			producerFactory.setPhysicalCloseTimeout(kafkaProducerProperties.getCloseTimeout());
