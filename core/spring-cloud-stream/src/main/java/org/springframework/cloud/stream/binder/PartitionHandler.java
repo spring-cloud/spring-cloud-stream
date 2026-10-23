@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -183,19 +184,66 @@ public class PartitionHandler {
 	}
 
 	/**
-	 * Default partition strategy; only works on keys with "real" hash codes, such as
-	 * String. Caller now always applies modulo so no need to do so here.
+	 * Default partition strategy using Murmur2 hashing to provide a more even
+	 * distribution of keys across partitions.
 	 */
 	private static class DefaultPartitionSelector implements PartitionSelectorStrategy {
 
+		private static final int SEED = 0x9747b28c;
+
+		private static final int M = 0x5bd1e995;
+
 		@Override
 		public int selectPartition(Object key, int partitionCount) {
-			int hashCode = key.hashCode();
-			if (hashCode == Integer.MIN_VALUE) {
-				hashCode = 0;
-			}
-			return Math.abs(hashCode);
+			byte[] bytes = key.toString().getBytes(StandardCharsets.UTF_8);
+			return murmur2(bytes) & 0x7fffffff;
 		}
+
+		private int murmur2(byte[] data) {
+			int length = data.length;
+			int h = SEED ^ length;
+			int length4 = length / 4;
+
+			for (int i = 0; i < length4; i++) {
+				int i4 = i * 4;
+
+				int k = (data[i4] & 0xff)
+					| ((data[i4 + 1] & 0xff) << 8)
+					| ((data[i4 + 2] & 0xff) << 16)
+					| ((data[i4 + 3] & 0xff) << 24);
+
+				k *= M;
+				k ^= k >>> 24;
+				k *= M;
+
+				h *= M;
+				h ^= k;
+			}
+
+			int remaining = length % 4;
+			int offset = length4 * 4;
+
+			switch (remaining) {
+				case 3:
+					h ^= (data[offset + 2] & 0xff) << 16;
+					// fall through
+				case 2:
+					h ^= (data[offset + 1] & 0xff) << 8;
+					// fall through
+				case 1:
+					h ^= data[offset] & 0xff;
+					h *= M;
+				default:
+					break;
+			}
+
+			h ^= h >>> 13;
+			h *= M;
+			h ^= h >>> 15;
+
+			return h;
+		}
+
 	}
 
 
