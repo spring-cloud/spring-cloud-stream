@@ -543,12 +543,22 @@ public class KafkaBinderConfigurationProperties {
 
 		private String transactionIdPrefix;
 
+		private Duration maxAge;
+
 		public String getTransactionIdPrefix() {
 			return this.transactionIdPrefix;
 		}
 
 		public void setTransactionIdPrefix(String transactionIdPrefix) {
 			this.transactionIdPrefix = transactionIdPrefix;
+		}
+
+		public Duration getMaxAge() {
+			return this.maxAge;
+		}
+
+		public void setMaxAge(Duration maxAge) {
+			this.maxAge = maxAge;
 		}
 
 		public CombinedProducerProperties getProducer() {
