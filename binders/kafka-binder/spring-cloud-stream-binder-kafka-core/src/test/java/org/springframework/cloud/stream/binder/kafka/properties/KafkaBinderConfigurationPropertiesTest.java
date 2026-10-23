@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
 
@@ -45,6 +46,17 @@ class KafkaBinderConfigurationPropertiesTest {
 				new KafkaBinderConfigurationProperties(kafkaProperties, mock(ObjectProvider.class));
 
 		assertThat(kafkaBinderConfigurationProperties.getRequiredAcks()).isEqualTo("all");
+	}
+
+	@Test
+	void transactionMaxAgeCanBeConfigured() {
+		KafkaBinderConfigurationProperties.Transaction transaction =
+			new KafkaBinderConfigurationProperties.Transaction();
+
+		Duration maxAge = Duration.ofMinutes(5);
+		transaction.setMaxAge(maxAge);
+
+		assertThat(transaction.getMaxAge()).isEqualTo(maxAge);
 	}
 
 	@Test
