@@ -31,6 +31,7 @@ import org.springframework.util.StringUtils;
  * Actuator endpoint for topology description.
  *
  * @author Soby Chacko
+ * @author Ngoc Nhan
  * @since 3.0.4
  */
 @Endpoint(id = "kafkastreamstopology")
@@ -51,9 +52,8 @@ public class KafkaStreamsTopologyEndpoint {
 	public List<String> kafkaStreamsTopologies() {
 		final List<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans = this.kafkaStreamsRegistry.streamsBuilderFactoryBeans();
 		final List<String> descs = new ArrayList<>();
-		streamsBuilderFactoryBeans.stream()
-				.forEach(streamsBuilderFactoryBean ->
-						descs.add(Objects.requireNonNull(streamsBuilderFactoryBean.getTopology()).describe().toString()));
+		streamsBuilderFactoryBeans.forEach(streamsBuilderFactoryBean ->
+				descs.add(Objects.requireNonNull(streamsBuilderFactoryBean.getTopology()).describe().toString()));
 		return descs;
 	}
 
