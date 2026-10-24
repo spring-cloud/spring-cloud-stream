@@ -57,12 +57,12 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.type.StandardMethodMetadata;
-import org.springframework.lang.NonNull;
 import org.springframework.util.ClassUtils;
 
 /**
  * @author Soby Chacko
  * @author James Forward
+ * @author Ngoc Nhan
  *
  * @since 2.2.0
  */
@@ -110,8 +110,7 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 		collect.removeIf(Pattern.compile(".*_registration").asPredicate());
 
 		onlySingleFunction = collect.size() == 1;
-		collect.stream()
-				.forEach(this::extractResolvableTypes);
+		collect.forEach(this::extractResolvableTypes);
 
 		kafkaStreamsOnlyResolvableTypes.keySet().forEach(k -> addResolvableTypeInfo(k, kafkaStreamsOnlyResolvableTypes.get(k)));
 		kafakStreamsOnlyMethods.keySet().forEach(k -> addResolvableTypeInfo(k, kafakStreamsOnlyMethods.get(k)));
@@ -304,7 +303,7 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 	}
 
 	@Override
-	public void setBeanFactory(@NonNull BeanFactory beanFactory) throws BeansException {
+	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
 		this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
 	}
 

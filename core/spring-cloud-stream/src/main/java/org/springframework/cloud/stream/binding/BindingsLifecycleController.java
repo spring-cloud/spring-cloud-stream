@@ -53,6 +53,7 @@ import org.springframework.util.CollectionUtils;
  *
  * @author Oleg Zhurakousky
  * @author Soby Chacko
+ * @author Ngoc Nhan
  * @since 3.x
  */
 public class BindingsLifecycleController implements ApplicationContextAware {
@@ -241,10 +242,10 @@ public class BindingsLifecycleController implements ApplicationContextAware {
 		var bindingList = BindingsLifecycleController.this.locateBinding(bindingName);
 		if (!bindingList.isEmpty()) {
 			switch (state) {
-				case STARTED -> bindingList.stream().forEach(Binding::start);
-				case STOPPED -> bindingList.stream().forEach(Binding::stop);
-				case PAUSED -> bindingList.stream().forEach(Binding::pause);
-				case RESUMED -> bindingList.stream().forEach(Binding::resume);
+				case STARTED -> bindingList.forEach(Binding::start);
+				case STOPPED -> bindingList.forEach(Binding::stop);
+				case PAUSED -> bindingList.forEach(Binding::pause);
+				case RESUMED -> bindingList.forEach(Binding::resume);
 				default -> {
 				}
 			}
@@ -284,9 +285,9 @@ public class BindingsLifecycleController implements ApplicationContextAware {
 		bindingProxyFactory.setApplicationContext(this.applicationContext);
 		bindingProxyFactory.afterPropertiesSet();
 
-		AbstractBindingLifecycle bindingLifecycle = (bindingProxyFactory.getInputs().size() > 0) 
-				? this.applicationContext.getBean(InputBindingLifecycle.class)
-						: this.applicationContext.getBean(OutputBindingLifecycle.class);
+		AbstractBindingLifecycle bindingLifecycle = bindingProxyFactory.getInputs().isEmpty()
+				? this.applicationContext.getBean(OutputBindingLifecycle.class)
+				: this.applicationContext.getBean(InputBindingLifecycle.class);
 		
 		bindingLifecycle.startBindable(bindingProxyFactory);
 	}
