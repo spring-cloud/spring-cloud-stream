@@ -86,6 +86,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Oleg Zhurakousky
  * @author Soby Chacko
+ * @author Ngoc Nhan
  *
  */
 class ImplicitFunctionBindingTests {
@@ -175,13 +176,13 @@ class ImplicitFunctionBindingTests {
 			var multipleInput = ctrl.queryState("consumerMultiple-in-0");
 
 			assertThat(multipleInput).hasSize(destination.split(",").length);
-			multipleInput.stream().forEach(binding -> assertThat(binding.isRunning()).isTrue());
+			multipleInput.forEach(binding -> assertThat(binding.isRunning()).isTrue());
 
 			ctrl.changeState("consumerMultiple-in-0", State.STOPPED);
-			multipleInput.stream().forEach(binding -> assertThat(binding.isRunning()).isFalse());
+			multipleInput.forEach(binding -> assertThat(binding.isRunning()).isFalse());
 
 			ctrl.changeState("consumerMultiple-in-0", State.STARTED);
-			multipleInput.stream().forEach(binding -> assertThat(binding.isRunning()).isTrue());
+			multipleInput.forEach(binding -> assertThat(binding.isRunning()).isTrue());
 		}
 	}
 

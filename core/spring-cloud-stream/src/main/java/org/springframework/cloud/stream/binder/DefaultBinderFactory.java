@@ -80,6 +80,7 @@ import org.springframework.util.StringUtils;
  * @author Byungjun You
  * @author Omer Celik
  * @author Sharang Gupta
+ * @author Ngoc Nhan
  */
 public class DefaultBinderFactory implements BinderFactory, DisposableBean, ApplicationContextAware, SmartLifecycle {
 
@@ -318,7 +319,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 								.put(bindingTargetType.getName(), configurationName);
 					}
 					else {
-						String countMsg = (candidatesForBindableType.size() == 0)
+						String countMsg = candidatesForBindableType.isEmpty()
 								? "are no binders" : "is more than one binder";
 						throw new IllegalStateException(
 								"A default binder has been requested, but there "
@@ -347,7 +348,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	private <T> void populateCandidatesForBindableType(Class<? extends T> bindingTargetType, List<String> candidatesForBindableType,
 													String defaultCandidateConfiguration) {
 		// Going by the convention of proper reactor based binders start with the key literal - reactor
-		boolean isCandidate = (FluxMessageChannel.class.isAssignableFrom(bindingTargetType) && defaultCandidateConfiguration.startsWith("reactor"))
+		boolean isCandidate = FluxMessageChannel.class.isAssignableFrom(bindingTargetType)
 				|| !defaultCandidateConfiguration.startsWith("reactor");
 		if (isCandidate) {
 			candidatesForBindableType.add(defaultCandidateConfiguration);
@@ -497,7 +498,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			binderProducingContext.setParent(this.context);
 		}
 		else if (this.context != null) {
-			binderProducingContext.addApplicationListener(new ApplicationListener<ApplicationEvent>() {
+			binderProducingContext.addApplicationListener(new ApplicationListener<>() {
 				@Override
 				public void onApplicationEvent(ApplicationEvent event) {
 					if (context != null) {
@@ -574,13 +575,13 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 					Class<Object> beanType = this.loadClass(((String) className).trim());
 					if (beanType != null) {
 						Map<String, Object> beansOfType = fromContext.getBeansOfType(beanType);
-						beansOfType.entrySet().stream().forEach(entry -> {
-							Object bean = entry.getValue();
+						beansOfType.forEach((key, value) -> {
+							Object bean = value;
 							if (bean instanceof Converter) {
 								binderProducingConversionService.addConverter((Converter<?, ?>) bean);
 							}
 							else {
-								toContext.registerBean(entry.getKey() + "_child", beanType, () -> entry.getValue());
+								toContext.registerBean(key + "_child", beanType, () -> bean);
 							}
 						});
 					}
