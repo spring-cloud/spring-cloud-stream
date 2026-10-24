@@ -25,8 +25,8 @@ import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.ser.std.StdSerializer;
 
 /**
- * since 5.0.2
- * author Oleg Zhurakousky
+ * @author Oleg Zhurakousky
+ * @since 5.0.2
  */
 public class ExpressionSerializer extends StdSerializer<Expression> {
 

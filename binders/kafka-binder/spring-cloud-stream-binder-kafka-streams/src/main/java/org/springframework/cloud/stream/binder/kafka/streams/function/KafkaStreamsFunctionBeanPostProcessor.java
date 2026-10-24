@@ -80,7 +80,7 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 	private final StreamFunctionProperties streamFunctionProperties;
 
 	private final Map<String, ResolvableType> kafkaStreamsOnlyResolvableTypes = new HashMap<>();
-	private final Map<String, Method> kafakStreamsOnlyMethods = new HashMap<>();
+	private final Map<String, Method> kafkaStreamsOnlyMethods = new HashMap<>();
 	private ConfigurableApplicationContext applicationContext;
 
 	public KafkaStreamsFunctionBeanPostProcessor(StreamFunctionProperties streamFunctionProperties) {
@@ -114,7 +114,7 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 				.forEach(this::extractResolvableTypes);
 
 		kafkaStreamsOnlyResolvableTypes.keySet().forEach(k -> addResolvableTypeInfo(k, kafkaStreamsOnlyResolvableTypes.get(k)));
-		kafakStreamsOnlyMethods.keySet().forEach(k -> addResolvableTypeInfo(k, kafakStreamsOnlyMethods.get(k)));
+		kafkaStreamsOnlyMethods.keySet().forEach(k -> addResolvableTypeInfo(k, kafkaStreamsOnlyMethods.get(k)));
 
 		BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
 
@@ -250,7 +250,7 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 			this.methods.put(key, method);
 		}
 		else {
-			kafakStreamsOnlyMethods.put(key, method);
+			kafkaStreamsOnlyMethods.put(key, method);
 		}
 	}
 
@@ -283,7 +283,7 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 	}
 
 	private void addResolvableTypeInfo(String key, Method method) {
-		if (kafakStreamsOnlyMethods.size() == 1) {
+		if (kafkaStreamsOnlyMethods.size() == 1) {
 			this.methods.put(key, method);
 		}
 		else {

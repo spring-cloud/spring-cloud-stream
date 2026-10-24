@@ -99,7 +99,7 @@ public class RabbitMessageChannelBinderConfiguration {
 					+ "#" + nameIncrementer.getAndIncrement());
 		}
 
-		ListenerContainerCustomizer<MessageListenerContainer> composedCistomizer = new ListenerContainerCustomizer<>() {
+		ListenerContainerCustomizer<MessageListenerContainer> composedCustomizer = new ListenerContainerCustomizer<>() {
 			@Override
 			public void configure(MessageListenerContainer container, String destinationName, String group) {
 				if (!CollectionUtils.isEmpty(listenerContainerCustomizers)) {
@@ -122,7 +122,7 @@ public class RabbitMessageChannelBinderConfiguration {
 
 		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(
 				this.rabbitConnectionFactory, this.rabbitProperties,
-				provisioningProvider(declarableCustomizers), composedCistomizer, sourceCustomizer);
+				provisioningProvider(declarableCustomizers), composedCustomizer, sourceCustomizer);
 		binder.setAdminAddresses(
 				this.rabbitBinderConfigurationProperties.getAdminAddresses());
 		binder.setCompressingPostProcessor(gZipPostProcessor());

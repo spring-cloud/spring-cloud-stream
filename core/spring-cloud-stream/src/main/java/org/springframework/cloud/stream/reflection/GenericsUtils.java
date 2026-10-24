@@ -101,10 +101,9 @@ public final class GenericsUtils {
 
 	/**
 	 * Return the generic type of PollableSource to determine if it is appropriate for the
-	 * binder. e.g., with PollableMessageSource extends
-	 * PollableSource&lt;MessageHandler&gt; and AbstractMessageChannelBinder implements
-	 * PollableConsumerBinder&lt;MessageHandler, C&gt; We're checking that the the generic
-	 * type (MessageHandler) matches.
+	 * binder. e.g., with {@code PollableMessageSource extends PollableSource<MessageHandler>}
+	 * and {@code AbstractMessageChannelBinder implements PollableConsumerBinder<MessageHandler, C>}.
+	 * We're checking that the generic type (MessageHandler) matches.
 	 * @param binderInstance the binder.
 	 * @param bindingTargetType the binding target type.
 	 * @return true if found, false otherwise.

@@ -45,7 +45,7 @@ public class RabbitTestSupport
 
 	private final boolean management;
 	private final int ampqPort;
-	private final int managmentPort;
+	private final int managementPort;
 
 	public RabbitTestSupport() {
 		this(false);
@@ -59,7 +59,7 @@ public class RabbitTestSupport
 		super("RABBIT");
 		this.management = management;
 		this.ampqPort = amqpPort;
-		this.managmentPort = managementPort;
+		this.managementPort = managementPort;
 
 	}
 
@@ -68,7 +68,7 @@ public class RabbitTestSupport
 		resource = new CachingConnectionFactory("localhost", this.ampqPort);
 		resource.createConnection().close();
 		if (management) {
-			Socket socket = SocketFactory.getDefault().createSocket("localhost", this.managmentPort);
+			Socket socket = SocketFactory.getDefault().createSocket("localhost", this.managementPort);
 			socket.close();
 		}
 	}

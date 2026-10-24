@@ -524,10 +524,10 @@ Use the corresponding input channel name for your example.
 [source,java]
 ----
 @SpringBootApplication
-public class ManuallyAcknowdledgingConsumer {
+public class ManuallyAcknowledgingConsumer {
 
     public static void main(String[] args) {
-        SpringApplication.run(ManuallyAcknowdledgingConsumer.class, args);
+        SpringApplication.run(ManuallyAcknowledgingConsumer.class, args);
     }
 
     @Bean
