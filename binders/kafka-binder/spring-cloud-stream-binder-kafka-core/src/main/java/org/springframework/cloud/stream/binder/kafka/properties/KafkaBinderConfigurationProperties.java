@@ -37,6 +37,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.kafka.autoconfigure.KafkaConfigBuilder;
 import org.springframework.boot.kafka.autoconfigure.KafkaConnectionDetails;
 import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.cloud.stream.binder.HeaderMode;
@@ -400,7 +401,8 @@ public class KafkaBinderConfigurationProperties {
 	 * @return the merged properties.
 	 */
 	public Map<String, Object> mergedConsumerConfiguration() {
-		Map<String, Object> consumerConfiguration = new HashMap<>(this.kafkaProperties.buildConsumerProperties());
+		Map<String, Object> consumerConfiguration = new HashMap<>(
+			KafkaConfigBuilder.of(this.kafkaProperties).consumer().build());
 		if (!consumerConfiguration.containsKey(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG) && this.kafkaConnectionDetails != null) {
 			consumerConfiguration.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, this.kafkaConnectionDetails.getConsumer().getBootstrapServers());
 		}
@@ -429,7 +431,8 @@ public class KafkaBinderConfigurationProperties {
 	 * @return the merged properties.
 	 */
 	public Map<String, Object> mergedProducerConfiguration() {
-		Map<String, Object> producerConfiguration = new HashMap<>(this.kafkaProperties.buildProducerProperties());
+		Map<String, Object> producerConfiguration = new HashMap<>(
+			KafkaConfigBuilder.of(this.kafkaProperties).producer().build());
 		if (!producerConfiguration.containsKey(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG) && this.kafkaConnectionDetails != null) {
 			producerConfiguration.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, this.kafkaConnectionDetails.getProducer().getBootstrapServers());
 		}
