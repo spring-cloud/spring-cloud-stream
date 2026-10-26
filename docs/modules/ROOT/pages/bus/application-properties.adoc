@@ -21,6 +21,7 @@ Also, you can define your own properties.
 |spring.cloud.bus.enabled | `+++true+++` | Flag to indicate that the bus is enabled.
 |spring.cloud.bus.env.enabled | `+++true+++` | Flag to switch off environment change events (default on).
 |spring.cloud.bus.id | `+++application+++` | The identifier for this application instance.
+|spring.cloud.bus.jgroups.cluster-name | `+++spring-cloud-bus+++` | Name of the JGroups cluster used by Spring Cloud Bus.
 |spring.cloud.bus.refresh.enabled | `+++true+++` | Flag to switch off refresh events (default on).
 |spring.cloud.bus.shutdown.enabled | `+++true+++` | Flag to switch off shutdown events (default on).
 |spring.cloud.bus.trace.enabled | `+++false+++` | Flag to switch on tracing of acks (default off).
