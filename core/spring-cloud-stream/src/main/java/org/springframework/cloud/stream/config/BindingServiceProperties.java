@@ -109,7 +109,7 @@ public class BindingServiceProperties
 	private Map<String, BindingProperties> bindings = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
 	/**
-	 * Additional per-binder properties (see {@link BinderProperties}) if more then one
+	 * Additional per-binder properties (see {@link BinderProperties}) if more than one
 	 * binder of the same type is used (i.e., connect to multiple instances of RabbitMq).
 	 * Here you can specify multiple binder configurations, each with different
 	 * environment settings. For example; spring.cloud.stream.binders.rabbit1.environment.

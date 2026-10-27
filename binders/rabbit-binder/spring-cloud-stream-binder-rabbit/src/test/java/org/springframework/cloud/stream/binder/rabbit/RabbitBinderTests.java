@@ -1320,7 +1320,7 @@ class RabbitBinderTests extends
 		properties.getExtension().setAutoBindDlq(true);
 		properties.getExtension().setRepublishToDlq(true);
 		properties.getExtension()
-				.setRepublishDeliveyMode(MessageDeliveryMode.NON_PERSISTENT);
+				.setRepublishDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
 		properties.setMaxAttempts(withRetry ? 2 : 1);
 		properties.setPartitioned(true);
 		properties.setInstanceIndex(0);

@@ -57,10 +57,9 @@ public class CompositeMessageChannelConfigurer
 
 	@Override
 	public void configurePolledMessageSource(PollableMessageSource binding, String name) {
-		this.messageChannelConfigurers.forEach(cconfigurer -> {
-			if (cconfigurer instanceof MessageChannelAndSourceConfigurer) {
-				((MessageChannelAndSourceConfigurer) cconfigurer)
-						.configurePolledMessageSource(binding, name);
+		this.messageChannelConfigurers.forEach(configure -> {
+			if (configure instanceof MessageChannelAndSourceConfigurer messageChannelAndSourceConfigurer) {
+				messageChannelAndSourceConfigurer.configurePolledMessageSource(binding, name);
 			}
 		});
 	}

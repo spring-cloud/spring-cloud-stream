@@ -5,13 +5,13 @@ This example illustrates how one may manually acknowledge offsets in a consumer 
 This example requires that `spring.cloud.stream.kafka.bindings.input.consumer.ackMode` be set to `MANUAL`.
 Use the corresponding input channel name for your example.
 
-[source]
+[source,java]
 ----
 @SpringBootApplication
-public class ManuallyAcknowdledgingConsumer {
+public class ManuallyAcknowledgingConsumer {
 
  public static void main(String[] args) {
-     SpringApplication.run(ManuallyAcknowdledgingConsumer.class, args);
+     SpringApplication.run(ManuallyAcknowledgingConsumer.class, args);
  }
 
  @Bean

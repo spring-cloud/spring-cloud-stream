@@ -41,7 +41,7 @@ import org.springframework.util.StringUtils;
 
 /**
  * {@link org.springframework.cloud.stream.binder.Binder} implementation for
- * {@link KTable}. This implemenation extends from the {@link AbstractBinder} directly.
+ * {@link KTable}. This implementation extends from the {@link AbstractBinder} directly.
  * <p>
  * Provides only consumer binding for the bound KTable as output bindings are not allowed
  * on it.

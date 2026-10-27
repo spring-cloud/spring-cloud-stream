@@ -63,7 +63,7 @@ public class RabbitPartitionProducerApplication {
 
 [NOTE]
 ====
-The configuration in the prececing example uses the default partitioning (`key.hashCode() % partitionCount`).
+The configuration in the preceding example uses the default partitioning (`key.hashCode() % partitionCount`).
 This may or may not provide a suitably balanced algorithm, depending on the key values.
 You can override this default by using the `partitionSelectorExpression` or `partitionSelectorClass` properties.
 
