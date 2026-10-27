@@ -19,17 +19,19 @@ package org.springframework.cloud.bus;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.actuate.autoconfigure.endpoint.condition.ConditionalOnAvailableEndpoint;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
-import org.springframework.boot.actuate.web.exchanges.HttpExchangeRepository;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.bus.endpoint.EnvironmentBusEndpoint;
+import org.springframework.cloud.bus.endpoint.TraceBusEndpoint;
 import org.springframework.cloud.bus.event.Destination;
 import org.springframework.cloud.bus.event.EnvironmentChangeListener;
 import org.springframework.cloud.bus.event.PathDestinationFactory;
 import org.springframework.cloud.bus.event.TraceListener;
+import org.springframework.cloud.bus.trace.InMemoryTraceRepository;
+import org.springframework.cloud.bus.trace.TraceRepository;
 import org.springframework.cloud.context.environment.EnvironmentManager;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
@@ -68,14 +70,28 @@ public class BusAutoConfiguration {
 
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass({ Endpoint.class })
-	@ConditionalOnBean(HttpExchangeRepository.class)
 	@ConditionalOnProperty(BusProperties.PREFIX + ".trace.enabled")
+	@ConditionalOnAvailableEndpoint(TraceBusEndpoint.class)
 	protected static class BusAckTraceConfiguration {
 
 		@Bean
 		@ConditionalOnMissingBean
-		public TraceListener ackTraceListener(HttpExchangeRepository repository) {
-			return new TraceListener(repository);
+		public TraceRepository traceRepository() {
+			return new InMemoryTraceRepository();
+		}
+
+		@Bean
+		@ConditionalOnBean(TraceRepository.class)
+		@ConditionalOnMissingBean
+		public TraceBusEndpoint traceBusEndpoint(TraceRepository traceRepository) {
+			return new TraceBusEndpoint(traceRepository);
+		}
+
+		@Bean
+		@ConditionalOnBean(TraceRepository.class)
+		@ConditionalOnMissingBean
+		public TraceListener traceListener(TraceRepository traceRepository) {
+			return new TraceListener(traceRepository);
 		}
 
 	}
