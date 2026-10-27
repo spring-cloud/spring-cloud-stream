@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerGroupMetadata;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
@@ -32,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.kafka.autoconfigure.KafkaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.common.AbstractKafkaBinderHealthIndicator;
@@ -39,6 +41,8 @@ import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfigura
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
+import org.springframework.cloud.stream.binder.kafka.support.ConsumerConfigCustomizer;
+import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -52,7 +56,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Soby Chacko
  */
 @SpringBootTest(classes = { KafkaBinderConfiguration.class, KafkaAutoConfiguration.class,
-		KafkaBinderPropertiesTest.class })
+		KafkaBinderPropertiesTest.class,
+		KafkaBinderPropertiesTest.HealthIndicatorCustomizerConfiguration.class })
 @TestPropertySource(locations = "classpath:binder-config.properties", properties =
 	"spring.cloud.stream.kafka.binder.healthIndicatorConsumerGroup=health-consumer-group")
 class KafkaBinderPropertiesTest {
@@ -81,6 +86,12 @@ class KafkaBinderPropertiesTest {
 		ConsumerFactory<?, ?> healthIndicatorConsumerFactory =
 			(ConsumerFactory<?, ?>) consumerFactoryField.get(this.kafkaBinderHealthIndicator);
 		assertThat(healthIndicatorConsumerFactory).isNotNull();
+		Field healthConsumerFactoryConfigField = ReflectionUtils
+			.findField(DefaultKafkaConsumerFactory.class, "configs", Map.class);
+		ReflectionUtils.makeAccessible(healthConsumerFactoryConfigField);
+		Map<String, Object> healthConsumerConfigs = (Map<String, Object>) ReflectionUtils
+			.getField(healthConsumerFactoryConfigField, healthIndicatorConsumerFactory);
+		assertThat(healthConsumerConfigs).containsEntry(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		Consumer<?, ?> consumer = healthIndicatorConsumerFactory.createConsumer();
 		ConsumerGroupMetadata consumerGroupMetadata = consumer.groupMetadata();
 		assertThat(consumerGroupMetadata.groupId()).isEqualTo("health-consumer-group");
@@ -142,6 +153,17 @@ class KafkaBinderPropertiesTest {
 				.isEqualTo(ByteArrayDeserializer.class);
 		assertThat((((String) consumerConfigs.get("bootstrap.servers"))
 				.contains("10.98.09.199:9082"))).isTrue();
+	}
+
+	@TestConfiguration(proxyBeanMethods = false)
+	static class HealthIndicatorCustomizerConfiguration {
+
+		@Bean
+		ConsumerConfigCustomizer healthIndicatorConsumerConfigCustomizer() {
+			return (consumerProperties, bindingName, destination) ->
+					consumerProperties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+		}
+
 	}
 
 }

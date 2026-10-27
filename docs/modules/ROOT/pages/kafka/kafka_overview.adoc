@@ -961,6 +961,7 @@ For example, if you want to gain access to a bean that is defined at the applica
 When the binder discovers that these customizers are available as beans, it will invoke the `configure` method right before creating the consumer and producer factories.
 
 Both of these interfaces also provide access to both the binding and destination names so that they can be accessed while customizing producer and consumer properties.
+`ConsumerConfigCustomizer` is also applied to the Kafka binder health indicator's consumer. Since that consumer is not associated with a binding, both the binding and destination names are `kafkaBinderHealthIndicator`.
 
 [[admin-client-config-customization]]
 === Customizing AdminClient Configuration
