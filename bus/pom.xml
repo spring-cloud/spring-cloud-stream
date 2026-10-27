@@ -81,7 +81,7 @@
 			<dependency>
 				<groupId>org.jgroups</groupId>
 				<artifactId>jgroups</artifactId>
-				<version>5.5.7.Final</version>
+				<version>5.5.8.Final</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
