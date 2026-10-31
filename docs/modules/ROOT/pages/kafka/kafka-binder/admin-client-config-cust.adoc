@@ -6,11 +6,12 @@ AdminClientConfigCustomizer's configure method provides access to the admin clie
 Binder's Kafka topic provisioner gives the highest precedence for the properties given through this customizer.
 Here is an example of providing this customizer bean.
 
-```
+[source,java]
+----
 @Bean
 public AdminClientConfigCustomizer adminClientConfigCustomizer() {
     return props -> {
         props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_SSL");
     };
 }
-```
+----
