@@ -8,8 +8,9 @@ This could be useful when you are consuming records from a partitioned topic.
 For example, assume that the incoming topic has at least three partitions.
 Then you can set the following property.
 
-```
+[source,properties]
+----
 spring.cloud.stream.bindings.lowercase-in-0.consumer.concurrency=3
-```
+----
 
 That will create three dedicated `KafkaReceiver` objects that generate three separate `Flux` implementations and then stream them to the handler method.

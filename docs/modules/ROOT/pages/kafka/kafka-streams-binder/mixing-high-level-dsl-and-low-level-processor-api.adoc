@@ -11,7 +11,8 @@ Applications can use the `transform` or `process` method API calls to get access
 
 Here is a look at how one may combine both the DSL and the processor API in a Spring Cloud Stream application using the `process` API.
 
-```
+[source,java]
+----
 @Bean
 public Consumer<KStream<Object, String>> process() {
     return input ->
@@ -32,11 +33,12 @@ public Consumer<KStream<Object, String>> process() {
 
         });
 }
-```
+----
 
 Here is an example using the `transform` API.
 
-```
+[source,java]
+----
 @Bean
 public Consumer<KStream<Object, String>> process() {
     return (input, a) ->
@@ -57,7 +59,7 @@ public Consumer<KStream<Object, String>> process() {
             }
         });
 }
-```
+----
 
 The `process` API method call is a terminal operation while the `transform` API is non terminal and gives you a potentially transformed `KStream` using which you can continue further processing using either the DSL or the processor API.
 

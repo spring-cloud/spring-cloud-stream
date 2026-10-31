@@ -3,9 +3,10 @@
 
 Following are the maven coordinates for the reactive Kafka binder.
 
-```
+[source,xml]
+----
 <dependency>
   <groupId>org.springframework.cloud</groupId>
   <artifactId>spring-cloud-stream-binder-kafka-reactive</artifactId>
 </dependency>
-```
+----

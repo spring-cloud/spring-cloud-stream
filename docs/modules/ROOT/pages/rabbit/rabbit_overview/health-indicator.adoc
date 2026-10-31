@@ -9,10 +9,11 @@ In the case of multi-binder environments, this has to be set on the binder's env
 
 When the health indicator is disabled, you should see something like the below in the health actuator endpoint:
 
-```
+[source,json]
+----
 "rabbit": {
   "status": "UNKNOWN"
 }
-```
+----
 
 At the Spring Boot level, if you want to disable the Rabbit health indicator, you need to use the property `management.health.rabbit.enabled` and set to `false`.
