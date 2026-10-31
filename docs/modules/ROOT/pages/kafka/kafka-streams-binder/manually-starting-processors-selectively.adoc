@@ -5,7 +5,8 @@ While the approach laid out above will unconditionally apply auto start `false` 
 For instance, let us assume that you have three different functions (processors) in your application and for one of the processors, you do not want to start it as part of the application startup.
 Here is an example of such a situation.
 
-```
+[source,java]
+----
 
 @Bean
 public Function<KStream<?, ?>, KStream<?, ?>> process1() {
@@ -22,7 +23,7 @@ public BiFunction<KStream<?, ?>, KTable<?, ?>, KStream<?, ?>> process3() {
 
 }
 
-```
+----
 
 In this scenario above, if you set `spring.kafka.streams.auto-startup` to `false`, then none of the processors will auto start during the application startup.
 In that case, you have to programmatically start them as described above by calling `start()` on the underlying `StreamsBuilderFactoryManager`.
@@ -35,26 +36,30 @@ Because they share the same factory bean, you don't have to set autoStartup to f
 
 Here is the Spring Cloud Stream property that you can use to disable auto startup for this processor.
 
-```
+[source,yaml]
+----
 spring.cloud.stream.bindings.process3-in-0.consumer.auto-startup: false
-```
+----
 
 or
 
-```
+[source,yaml]
+----
 spring.cloud.stream.bindings.process3-in-1.consumer.auto-startup: false
-```
+----
 
 Then, you can manually start the processor either using the REST endpoint or using the `BindingsEndpoint` API as shown below.
 For this, you need to ensure that you have the Spring Boot actuator dependency on the classpath.
 
-```
+[source,bash]
+----
 curl -d '{"state":"STARTED"}' -H "Content-Type: application/json" -X POST http://localhost:8080/actuator/bindings/process3-in-0
-```
+----
 
 or
 
-```
+[source,java]
+----
 @Autowired
 BindingsEndpoint endpoint;
 
@@ -64,7 +69,7 @@ public ApplicationRunner runner() {
         endpoint.changeState("process3-in-0", State.STARTED);
     };
 }
-```
+----
 
 See https://docs.spring.io/spring-cloud-stream/docs/current/reference/html/spring-cloud-stream.html#binding_visualization_control[this section] from the reference docs for more details on this mechanism.
 

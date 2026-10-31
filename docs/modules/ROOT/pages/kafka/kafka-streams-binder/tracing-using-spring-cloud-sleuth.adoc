@@ -6,7 +6,8 @@ However, in order to trace any application specific operations, those need to be
 This can be done by injecting the `KafkaStreamsTracing` bean from Spring Cloud Sleuth in the application and then invoke various Kafka Streams operations through this injected bean.
 Here are some examples of using it.
 
-```
+[source,java]
+----
 @Bean
 public BiFunction<KStream<String, Long>, KTable<String, String>, KStream<String, Long>> clicks(KafkaStreamsTracing kafkaStreamsTracing) {
     return (userClicksStream, userRegionsTable) -> (userClicksStream
@@ -23,7 +24,7 @@ public BiFunction<KStream<String, Long>, KTable<String, String>, KStream<String,
             .reduce(Long::sum, Materialized.as(CLICK_UPDATES))
             .toStream());
 }
-```
+----
 
 In the example above, there are two places where it adds explicit tracing instrumentation.
 First, we are logging the key/value information from the incoming `KStream`.
@@ -34,7 +35,8 @@ In this case also, the logged message will contain the span ID and trace ID.
 Here is another example, where we use the low-level transformer API for accessing the various Kafka Streams headers.
 When spring-cloud-sleuth is on the classpath, all the tracing headers can also be accessed like this.
 
-```
+[source,java]
+----
 @Bean
 public Function<KStream<String, String>, KStream<String, String>> process(KafkaStreamsTracing kafkaStreamsTracing) {
     return input -> input.transform(kafkaStreamsTracing.transformer(
@@ -60,5 +62,5 @@ public Function<KStream<String, String>, KStream<String, String>> process(KafkaS
                 }
             }));
 }
-```
+----
 
