@@ -7,7 +7,8 @@
 Binder allows to have multiple Kafka Streams processors within a single Spring Cloud Stream application.
 You can have an application as below.
 
-```
+[source,java]
+----
 @Bean
 public java.util.function.Function<KStream<Object, String>, KStream<Object, String>> process() {
    ...
@@ -23,7 +24,7 @@ public java.util.function.BiFunction<KStream<Object, String>, KTable<Integer, St
    ...
 }
 
-```
+----
 
 In this case, the binder will create 3 separate Kafka Streams objects with different application ID's (more on this below).
 However, if you have more than one processor in the application, you have to tell Spring Cloud Stream, which functions need to be activated.
@@ -52,21 +53,23 @@ In the case of the functional model, you can attach it to each function as a pro
 
 For e.g. imagine that you have the following functions.
 
-```
+[source,java]
+----
 @Bean
 public java.util.function.Consumer<KStream<Object, String>> process() {
    ...
 }
-```
+----
 
 and
 
-```
+[source,java]
+----
 @Bean
 public java.util.function.Consumer<KStream<Object, String>> anotherProcess() {
   ...
 }
-```
+----
 
 Then you can set the application id for each, using the following binder level properties.
 

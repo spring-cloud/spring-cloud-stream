@@ -17,32 +17,34 @@ Instead, I want to send the record in error to a DLT (Dead-Letter-Topic) and the
 The solution for this problem is to use the DLQ feature in Spring Cloud Stream.
 For the purposes of this discussion, let us assume that the following is our processor function.
 
-```
+[source,java]
+----
 @Bean
 public Consumer<byte[]> processData() {
   return s -> {
      throw new RuntimeException();
   };
 }
-```
+----
 
 This is a very trivial function that throws an exception for all the records that it processes, but you can take this function and extend it to any other similar situations.
 
 In order to send the records in error to a DLT, we need to provide the following configuration.
 
-```
+[source,yaml]
+----
 spring.cloud.stream:
   bindings:
    processData-in-0:
      group: my-group
      destination: input-topic
- kafka:
+  kafka:
    bindings:
      processData-in-0:
        consumer:
          enableDlq: true
          dlqName: input-topic-dlq
-```
+----
 
 In order to activate DLQ, the application must provide a group name.
 Anonymous consumers cannot use the DLQ facilities.
@@ -54,25 +56,27 @@ By default, the DLQ producer in Kafka binder expects the payload of type `byte[]
 If that is not the case, then we need to provide the configuration for proper serializer.
 For example, let us re-write the consumer function as below:
 
-```
+[source,java]
+----
 @Bean
 public Consumer<String> processData() {
   return s -> {
      throw new RuntimeException();
   };
 }
-```
+----
 
 Now, we need to tell Spring Cloud Stream, how we want to serialize the data when writing to the DLT.
 Here is the modified configuration for this scenario:
 
-```
+[source,yaml]
+----
 spring.cloud.stream:
   bindings:
    processData-in-0:
      group: my-group
      destination: input-topic
- kafka:
+  kafka:
    bindings:
      processData-in-0:
        consumer:
@@ -82,7 +86,7 @@ spring.cloud.stream:
            configuration:
              value.serializer: org.apache.kafka.common.serialization.StringSerializer
 
-```
+----
 
 [[dlq-with-advanced-retry-options]]
 == DLQ with Advanced Retry Options
@@ -100,36 +104,40 @@ If you followed the above recipe, then you get the default retry options built i
 By default, the binder retires for a maximum of 3 attempts with a one second initial delay, 2.0 multiplier with each back off with a max delay of 10 seconds.
 You can change all these configurations as below:
 
-```
+[source,properties]
+----
 spring.cloud.stream.bindings.processData-in-0.consumer.maxAttempts
 spring.cloud.stream.bindings.processData-in-0.consumer.backOffInitialInterval
 spring.cloud.stream.bindings.processData-in-0.consumer.backOffMultiplier
 spring.cloud.stream.bindings.processData-in-0.consumer.backOffMaxInterval
-```
+----
 
 If you want, you can also provide a list of retryable exceptions by providing a map of boolean values.
 For example,
 
-```
+[source,properties]
+----
 spring.cloud.stream.bindings.processData-in-0.consumer.retryableExceptions.java.lang.IllegalStateException=true
 spring.cloud.stream.bindings.processData-in-0.consumer.retryableExceptions.java.lang.IllegalArgumentException=false
-```
+----
 
 By default, any exceptions not listed in the map above will be retried.
 If that is not desired, then you can disable that by providing,
 
-```
+[source,properties]
+----
 spring.cloud.stream.bindings.processData-in-0.consumer.defaultRetryable=false
-```
+----
 
 You can also provide your own `RetryTemplate` and mark it as `@StreamRetryTemplate` which will be scanned and used by the binder.
 This is useful when you want more sophisticated retry strategies and policies.
 
 If you have multiple `@StreamRetryTemplate` beans, then you can specify which one your binding wants by using the property,
 
-```
+[source,properties]
+----
 spring.cloud.stream.bindings.processData-in-0.consumer.retry-template-name=<your-retry-template-bean-name>
-```
+----
 
 [[handling-deserialization-errors-with-dlq]]
 == Handling Deserialization errors with DLQ
@@ -151,14 +159,15 @@ Let us explore those.
 
 Assuming this is our function:
 
-```
+[source,java]
+----
 @Bean
 public Consumer<String> functionName() {
     return s -> {
         System.out.println(s);
     };
 }
-```
+----
 
 It is a trivial function that takes a `String` parameter.
 
@@ -173,28 +182,31 @@ This `DefaultErrorHandler` is configured with a `DeadLetterPublishingRecoverer`.
 We also need to configure an `ErrorHandlingDeserializer` for the consumer.
 That sounds like a lot of complex things, but in reality, it boils down to these 3 beans in this case.
 
-```
+[source,java]
+----
 	@Bean
 	public ListenerContainerCustomizer<AbstractMessageListenerContainer<byte[], byte[]>> customizer(DefaultErrorHandler errorHandler) {
 		return (container, dest, group) -> {
 			container.setCommonErrorHandler(errorHandler);
 		};
 	}
-```
+----
 
-```
+[source,java]
+----
 	@Bean
 	public DefaultErrorHandler errorHandler(DeadLetterPublishingRecoverer deadLetterPublishingRecoverer) {
 		return new DefaultErrorHandler(deadLetterPublishingRecoverer);
 	}
-```
+----
 
-```
+[source,java]
+----
 	@Bean
 	public DeadLetterPublishingRecoverer publisher(KafkaOperations bytesTemplate) {
 		return new DeadLetterPublishingRecoverer(bytesTemplate);
 	}
-```
+----
 
 Let us analyze each of them.
 The first one is the `ListenerContainerCustomizer` bean that takes a `DefaultErrorHandler`.
@@ -218,7 +230,8 @@ It then sets the exception in a header and passes this record to the listener, w
 
 Following is the configuration required:
 
-```
+[source,yaml]
+----
 spring.cloud.stream:
   function:
     definition: functionName
@@ -240,7 +253,7 @@ spring.cloud.stream:
           configuration:
             value.deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
             spring.deserializer.value.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
-```
+----
 
 We are providing the `ErrorHandlingDeserializer` through the `configuration` property on the binding.
 We are also indicating that the actual deserializer to delegate is the `StringDeserializer`.
@@ -305,7 +318,8 @@ First of all, when you want to reset to an arbitrary offset other than `earliest
 Then you have to provide a custom bean of type `KafkaBindingRebalanceListener`, which will be injected into all consumer bindings.
 It is an interface that comes with a few default methods, but here is the method that we are interested in:
 
-```
+[source,java]
+----
 /**
 	 * Invoked when partitions are initially assigned or after a rebalance. Applications
 	 * might only want to perform seek operations on an initial assignment. While the
@@ -323,7 +337,7 @@ It is an interface that comes with a few default methods, but here is the method
 			Collection<TopicPartition> partitions, boolean initial) {
 		// do nothing
 	}
-```
+----
 
 Let us look at the details.
 
@@ -334,18 +348,20 @@ When the consumer starts for the first time, all 4 partitions are getting initia
 However, we do not want to start the partitions to consume at the defaults (`earliest` since we define a group), rather for each partition, we want them to consume after seeking to arbitrary offsets.
 Imagine that you have a business case to consume from certain offsets as below.
 
-```
+[source]
+----
 Partition   start offset
 
 0           1000
 1           2000
 2           2000
 3           1000
-```
+----
 
 This could be achieved by implementing the above method as below.
 
-```
+[source,java]
+----
 
 @Override
 public void onPartitionsAssigned(String bindingName, Consumer<?, ?> consumer, Collection<TopicPartition> partitions, boolean initial) {
@@ -370,13 +386,13 @@ public void onPartitionsAssigned(String bindingName, Consumer<?, ?> consumer, Co
         });
     }
 }
-```
+----
 
 This is just a rudimentary implementation.
 Real world use cases are much more complex than this and you need to adjust accordingly, but this certainly gives you a basic sketch.
 When consumer `seek` fails, it may throw some runtime exceptions and you need to decide what to do in those cases.
 
-[[what-if-we-start-a-second-consumer-with-the-same-group-id?]]
+[[what-if-we-start-a-second-consumer-with-the-same-group-id]]
 === What if we start a second consumer with the same group id?
 
 When we add a second consumer, a rebalance will occur and some partitions will be moved around.
@@ -387,7 +403,7 @@ In the case of the first consumer, it now only has partitions `0` and `1`
 However, for this consumer it was simply a rebalance event and not considered as an initial assignment.
 Thus, it will not re-seek to the given offsets because of the conditional check on the `initial` argument.
 
-[[how-do-i-manually-acknowledge-using-kafka-binder?]]
+[[how-do-i-manually-acknowledge-using-kafka-binder]]
 == How do I manually acknowledge using Kafka binder?
 
 [[manually-acknowledging-problem-statement]]
@@ -411,7 +427,8 @@ When it is set like that, then there will be a header called `kafka_acknowledgme
 
 For example, imagine this as your consumer method.
 
-```
+[source,java]
+----
 @Bean
 public Consumer<Message<String>> myConsumer() {
     return msg -> {
@@ -422,11 +439,11 @@ public Consumer<Message<String>> myConsumer() {
         }
     };
 }
-```
+----
 
 Then you set the property `spring.cloud.stream.kafka.bindings.myConsumer-in-0.consumer.ackMode` to `MANUAL` or `MANUAL_IMMEDIATE`.
 
-[[how-do-i-override-the-default-binding-names-in-spring-cloud-stream?]]
+[[how-do-i-override-the-default-binding-names-in-spring-cloud-stream]]
 == How do I override the default binding names in Spring Cloud Stream?
 
 [[override-the-default-binding-names-problem-statement]]
@@ -439,12 +456,13 @@ Spring Cloud Stream creates default bindings based on the function definition an
 
 Assume that following is your function signature.
 
-```
+[source,java]
+----
 @Bean
 public Function<String, String> uppercase(){
 ...
 }
-```
+----
 
 By default, Spring Cloud Stream will create the bindings as below.
 
@@ -453,21 +471,23 @@ By default, Spring Cloud Stream will create the bindings as below.
 
 You can override these bindings to something by using the following properties.
 
-```
+[source,properties]
+----
 spring.cloud.stream.function.bindings.uppercase-in-0=my-transformer-in
 spring.cloud.stream.function.bindings.uppercase-out-0=my-transformer-out
-```
+----
 
 After this, all binding properties must be made on the new names, `my-transformer-in` and `my-transformer-out`.
 
 Here is another example with Kafka Streams and multiple inputs.
 
-```
+[source,java]
+----
 @Bean
 public BiFunction<KStream<String, Order>, KTable<String, Account>, KStream<String, EnrichedOrder>> processOrder() {
 ...
 }
-```
+----
 
 By default, Spring Cloud Stream will create three different binding names for this function.
 
@@ -490,7 +510,7 @@ You can easily do that by simply setting these three properties
 
 Once you do that, it overrides the default binding names and any properties that you want to set on them must be on these new binding names.
 
-[[how-do-i-send-a-message-key-as-part-of-my-record?]]
+[[how-do-i-send-a-message-key-as-part-of-my-record]]
 == How do I send a message key as part of my record?
 
 [[send-a-message-key-problem-statement]]
@@ -507,27 +527,29 @@ Following is a basic blueprint for doing this, but you may want to adapt it to y
 
 Here is sample producer method (aka `Supplier`).
 
-```
+[source,java]
+----
 @Bean
 public Supplier<Message<String>> supplier() {
     return () -> MessageBuilder.withPayload("foo").setHeader(KafkaHeaders.MESSAGE_KEY, "my-foo").build();
 }
-```
+----
 
 This is a trivial function that sends a message with a `String` payload, but also with a key.
 Note that we set the key as a message header using `KafkaHeaders.MESSAGE_KEY`.
 
 If you want to change the key from the default `kafka_messageKey`, then in the configuration, we need to specify this property:
 
-```
+[source,properties]
+----
 spring.cloud.stream.kafka.bindings.supplier-out-0.producer.messageKeyExpression=headers['my-special-key']
-```
+----
 
 Please note that we use the binding name `supplier-out-0` since that is our function name, please update accordingly.
 
 Then, we use this new key when we produce the message.
 
-[[how-do-i-use-native-serializer-and-deserializer-instead-of-message-conversion-done-by-spring-cloud-stream?]]
+[[how-do-i-use-native-serializer-and-deserializer-instead-of-message-conversion-done-by-spring-cloud-stream]]
 == How do I use native serializer and deserializer instead of message conversion done by Spring Cloud Stream?
 
 [[use-native-serializer-and-deserializer-problem-statement]]
@@ -544,24 +566,27 @@ This is really easy to do.
 
 All you have to do is to provide the following property to enable native serialization.
 
-```
+[source,yaml]
+----
 spring.cloud.stream.kafka.bindings.<binding-name>.producer.useNativeEncoding: true
-```
+----
 
 Then, you need to also set the serializers.
 There are a couple of ways to do this.
 
-```
+[source,yaml]
+----
 spring.cloud.stream.kafka.bindings.<binding-name>.producer.configuration.key.serializer: org.apache.kafka.common.serialization.StringSerializer
 spring.cloud.stream.kafka.bindings.<binding-name>.producer.configuration.value.serializer: org.apache.kafka.common.serialization.StringSerializer
-```
+----
 
 or using the binder configuration.
 
-```
+[source,yaml]
+----
 spring.cloud.stream.kafka.binder.configuration.key.serializer: org.apache.kafka.common.serialization.StringSerializer
 spring.cloud.stream.kafka.binder.configuration.value.serializer: org.apache.kafka.common.serialization.StringSerializer
-```
+----
 
 When using the binder way, it is applied against all the bindings whereas setting them at the bindings are per binding.
 
@@ -569,18 +594,20 @@ On the deserializing side, you just need to provide the deserializers as configu
 
 For example,
 
-```
+[source,yaml]
+----
 spring.cloud.stream.kafka.bindings.<binding-name>.consumer.configuration.key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
 spring.cloud.stream.kafka.bindings.<binding-name>.producer.configuration.value.deserializer: org.apache.kafka.common.serialization.StringDeserializer
-```
+----
 
 You can also set them at the binder level.
 
 There is an optional property that you can set to force native decoding.
 
-```
+[source,yaml]
+----
 spring.cloud.stream.kafka.bindings.<binding-name>.consumer.useNativeDecoding: true
-```
+----
 
 However, in the case of Kafka binder, this is unnecessary, as by the time it reaches the binder, Kafka already deserializes them using the configured deserializers.
 
@@ -599,13 +626,14 @@ Kafka Streams binder allows you to do that.
 
 Before we look at the solution, let us look at the following scenario.
 
-```
+[source,java]
+----
 @Bean
 public BiConsumer<KStream<Object, Object>, KTable<Object, Object>> myBiConsumer{
     (s, t) -> s.join(t, ...)
     ...
 }
-```
+----
 
 We have a `BiConsumer` bean that requires two input bindings.
 In this case, the first binding is for a `KStream` and the second one is for a `KTable`.
@@ -613,10 +641,11 @@ When running this application for the first time, by default, both bindings star
 What about I want to start from the `latest` offset due to some requirements?
 You can do this by enabling the following properties.
 
-```
+[source,yaml]
+----
 spring.cloud.stream.kafka.streams.bindings.myBiConsumer-in-0.consumer.startOffset: latest
 spring.cloud.stream.kafka.streams.bindings.myBiConsumer-in-1.consumer.startOffset: latest
-```
+----
 
 If you want only one binding to start from the `latest` offset and the other to consumer from the default `earliest`, then leave the latter binding out from the configuration.
 
@@ -635,39 +664,43 @@ I have a Kafka producer application and I want to keep track of all my successfu
 
 Let us assume that we have this following supplier in the application.
 
-```
+[source,java]
+----
 @Bean
 	public Supplier<Message<String>> supplier() {
 		return () -> MessageBuilder.withPayload("foo").setHeader(KafkaHeaders.MESSAGE_KEY, "my-foo").build();
 	}
-```
+----
 
 Then, we need to define a new `MessageChannel` bean to capture all the successful send information.
 
-```
+[source,java]
+----
 @Bean
 	public MessageChannel fooRecordChannel() {
 		return new DirectChannel();
 	}
-```
+----
 
 Next, define this property in the application configuration to provide the bean name for the `recordMetadataChannel`.
 
-```
+[source,yaml]
+----
 spring.cloud.stream.kafka.bindings.supplier-out-0.producer.recordMetadataChannel: fooRecordChannel
-```
+----
 
 At this point, successful sent information will be sent to the `fooRecordChannel`.
 
 You can write an `IntegrationFlow` as below to see the information.
 
-```
+[source,java]
+----
 @Bean
 public IntegrationFlow integrationFlow() {
     return f -> f.channel("fooRecordChannel")
                  .handle((payload, messageHeaders) -> payload);
 }
-```
+----
 
 In the `handle` method, the payload is what got sent to Kafka and the message headers contain a special key called `kafka_recordMetadata`.
 Its value is a `RecordMetadata` that contains information about topic partition, current offset etc.
@@ -687,16 +720,18 @@ Under normal circumstances, this should be fine.
 
 Imagine, you have the following producer.
 
-```
+[source,java]
+----
 @Bean
 public Supplier<Message<String>> supply() {
     return () -> MessageBuilder.withPayload("foo").setHeader("foo", "bar").build();
 }
-```
+----
 
 On the consumer side, you should still see the header "foo", and the following should not give you any issues.
 
-```
+[source,java]
+----
 @Bean
 public Consumer<Message<String>> consume() {
     return s -> {
@@ -704,12 +739,13 @@ public Consumer<Message<String>> consume() {
         System.out.println(foo);
     };
 }
-```
+----
 
 If you provide a https://docs.spring.io/spring-cloud-stream-binder-kafka/docs/3.1.3/reference/html/spring-cloud-stream-binder-kafka.html#_kafka_binder_properties[custom header mapper] in the application, then this won't work.
 Let's say you have an empty `KafkaHeaderMapper` in the application.
 
-```
+[source,java]
+----
 @Bean
 public KafkaHeaderMapper kafkaBinderHeaderMapper() {
     return new KafkaHeaderMapper() {
@@ -724,13 +760,14 @@ public KafkaHeaderMapper kafkaBinderHeaderMapper() {
         }
     };
 }
-```
+----
 
 If that is your implementation, then you will miss the `foo` header on the consumer.
 Chances are that, you may have some logic inside those `KafkaHeaderMapper` methods.
 You need the following to populate the `foo` header.
 
-```
+[source,java]
+----
 @Bean
 public KafkaHeaderMapper kafkaBinderHeaderMapper() {
     return new KafkaHeaderMapper() {
@@ -743,10 +780,11 @@ public KafkaHeaderMapper kafkaBinderHeaderMapper() {
         @Override
         public void toHeaders(Headers source, Map<String, Object> target) {
             final Header foo = source.lastHeader("foo");
-			target.put("foo", new String(foo.value()));
+            target.put("foo", new String(foo.value()));
         }
-    }
-```
+    };
+}
+----
 
 That will properly populate the `foo` header from the producer to consumer.
 
@@ -760,17 +798,19 @@ See this https://stackoverflow.com/questions/68412600/change-the-behaviour-in-sp
 In that case, you must use a custom `KafkaHeaderMapper` to map the case-sensitive id header.
 For example, let's say you have the following producer.
 
-```
+[source,java]
+----
 @Bean
 public Supplier<Message<String>> supply() {
     return () -> MessageBuilder.withPayload("foo").setHeader("Id", "my-id").build();
 }
-```
+----
 
 The header `Id` above will be gone from the consuming side as it clashes with the framework `id` header.
 You can provide a custom `KafkaHeaderMapper` to solve this issue.
 
-```
+[source,java]
+----
 @Bean
 public KafkaHeaderMapper kafkaBinderHeaderMapper1() {
     return new KafkaHeaderMapper() {
@@ -787,7 +827,7 @@ public KafkaHeaderMapper kafkaBinderHeaderMapper1() {
         }
     };
 }
-```
+----
 
 By doing this, both `id` and `Id` headers will be available from the producer to the consumer side.
 
@@ -809,7 +849,8 @@ In order to produce to multiple topics, use `StreamBridge` API.
 
 Below are the code snippets for this:
 
-```
+[source,java]
+----
 @Autowired
 StreamBridge bridge;
 
@@ -841,13 +882,14 @@ DefaultAfterRollbackProcessor rollbackProcessor(KafkaTemplate<byte[], byte[]> te
             new DeadLetterPublishingRecoverer(template), new FixedBackOff(2000L, 2L), template, true);
 }
 
-```
+----
 
 [[required-configuration]]
 === Required Configuration
 
-```
-spring.cloud.stream.kafka.binder.transaction.transaction-id-prefix: tx-
+[source,properties]
+----
+spring.cloud.stream.kafka.binder.transaction.transaction-id-prefix=tx-
 spring.cloud.stream.kafka.binder.required-acks=all
 spring.cloud.stream.bindings.input-in-0.group=foo
 spring.cloud.stream.bindings.input-in-0.destination=input
@@ -855,11 +897,12 @@ spring.cloud.stream.bindings.left.destination=left
 spring.cloud.stream.bindings.right.destination=right
 
 spring.cloud.stream.kafka.bindings.input-in-0.consumer.maxAttempts=1
-```
+----
 
 in order to test, you can use the following:
 
-```
+[source,java]
+----
 @Bean
 public ApplicationRunner runner(KafkaTemplate<byte[], byte[]> template) {
     return args -> {
@@ -868,7 +911,7 @@ public ApplicationRunner runner(KafkaTemplate<byte[], byte[]> template) {
         template.send("input", "Good".getBytes());
     };
 }
-```
+----
 
 Some important notes:
 
@@ -894,18 +937,20 @@ How can I run multiple instances of the pollable consumers and generate unique `
 
 Assuming that I have the following definition:
 
-```
+[source,yaml]
+----
 spring.cloud.stream.pollable-source: foo
 spring.cloud.stream.bindings.foo-in-0.group: my-group
-```
+----
 
 When running the application, the Kafka consumer generates a client.id (something like `consumer-my-group-1`).
 For each instance of the application that is running, this `client.id` will be the same, causing unexpected issues.
 
 In order to fix this, you can add the following property on each instance of the application:
 
-```
+[source,properties]
+----
 spring.cloud.stream.kafka.bindings.foo-in-0.consumer.configuration.client.id=${client.id}
-```
+----
 
 See this https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/1139[GitHub issue] for more details.

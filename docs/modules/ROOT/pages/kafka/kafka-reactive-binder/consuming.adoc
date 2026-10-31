@@ -48,9 +48,10 @@ RecordMessageConverter fullRawReceivedRecord() {
 Then, you need to instruct the framework to use this converter for the required binding.
 Here is an example based on our `lowercase` function.
 
-```
-spring.cloud.stream.kafka.bindings.lowercase-in-0.consumer.converterBeanName=fullRawReceivedRecord"
-```
+[source,properties]
+----
+spring.cloud.stream.kafka.bindings.lowercase-in-0.consumer.converterBeanName=fullRawReceivedRecord
+----
 
 `lowercase-in-0` is the input binding name for our `lowercase` function.
 For the outbound (`lowercase-out-0`), we still use the regular `MessagingMessageConverter`.
