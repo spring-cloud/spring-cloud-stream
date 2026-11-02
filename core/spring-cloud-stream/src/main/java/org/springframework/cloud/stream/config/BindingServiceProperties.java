@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -106,7 +106,9 @@ public class BindingServiceProperties
 	 * For example; This sets the content-type for the 'input' binding of a Sink
 	 * application: 'spring.cloud.stream.bindings.input.contentType=text/plain'
 	 */
-	private Map<String, BindingProperties> bindings = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+	// Case-insensitive (GH-3158) and thread-safe: getBindingProperties() and friends add
+	// missing bindings on first use and are called concurrently (e.g., by StreamBridge).
+	private Map<String, BindingProperties> bindings = new ConcurrentSkipListMap<>(String.CASE_INSENSITIVE_ORDER);
 
 	/**
 	 * Additional per-binder properties (see {@link BinderProperties}) if more than one
