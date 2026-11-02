@@ -17,6 +17,8 @@
 package org.springframework.cloud.stream.function;
 
 import java.lang.reflect.Type;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -118,6 +120,8 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 	private final BindingService bindingService;
 
 	private final Map<StreamBridgeFunctionKey, FunctionInvocationWrapper> streamBridgeFunctionCache;
+
+	private final Set<MessageChannel> interceptedChannels = Collections.newSetFromMap(new IdentityHashMap<>());
 
 	private final FunctionInvocationHelper<?> functionInvocationHelper;
 
@@ -280,7 +284,10 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 				if (this.applicationContext.containsBean(destinationName)) {
 					messageChannel = this.applicationContext.getBean(destinationName, MessageChannel.class);
 					String[] consumerBindingNames = this.bindingService.getConsumerBindingNames();
-					if (messageChannel instanceof AbstractMessageChannel) {
+					// Existing channel beans are not cached, so make sure the interceptor
+					// is added only once rather than on every send.
+					if (messageChannel instanceof AbstractMessageChannel
+							&& this.interceptedChannels.add(messageChannel)) {
 						addPartitioningInterceptorIfNeedBe(producerProperties, destinationName, (AbstractMessageChannel) messageChannel);
 					}
 					if (ObjectUtils.containsElement(consumerBindingNames, destinationName)) { //GH-2563
@@ -363,25 +370,28 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 	public void onApplicationEvent(ApplicationEvent event) {
 		// we need to do it by String to avoid cloud-bus and context dependencies
 		if (event.getClass().getName().equals("org.springframework.cloud.bus.event.RefreshRemoteApplicationEvent")) {
-			closeChannelsGracefully();
-			this.channelCache.clear();
+			lock.lock();
+			try {
+				closeChannelsGracefully();
+				this.channelCache.clear();
+			}
+			finally {
+				lock.unlock();
+			}
 		}
 	}
 
 	private void closeChannelsGracefully() {
-		this.channelCache.values().forEach(channel -> {
+		// The cache key is the same key under which the producer binding was registered
+		// (it may be prefixed with the binder name), so it must be used for unbinding.
+		this.channelCache.keySet().forEach(cacheKey -> {
 			try {
-				// First try to unbind producers (existing cleanup logic)
-				if (channel instanceof AbstractMessageChannel) {
-					String channelName = ((AbstractMessageChannel) channel).getComponentName();
-					if (channelName != null) {
-						this.bindingService.unbindProducers(channelName);
-					}
-				}
-			} catch (Exception e) {
+				this.bindingService.unbindProducers(cacheKey);
+			}
+			catch (Exception e) {
 				// Log but don't throw to ensure all channels get cleaned up
 				if (logger.isDebugEnabled()) {
-					logger.debug("Error while unbinding channel: " + channel, e);
+					logger.debug("Error while unbinding channel: " + cacheKey, e);
 				}
 			}
 		});
