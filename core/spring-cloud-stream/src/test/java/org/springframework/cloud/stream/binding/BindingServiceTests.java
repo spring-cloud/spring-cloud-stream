@@ -16,11 +16,21 @@
 
 package org.springframework.cloud.stream.binding;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 
@@ -30,6 +40,7 @@ import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.MessageChannel;
 
@@ -77,6 +88,44 @@ class BindingServiceTests {
 		inOrder.verify(mockBinding).stop();
 		inOrder.verify(mockBinding).unbind();
 		assertThat(service.getConsumerBindings(inputChannelName)).isEmpty();
+	}
+
+	@Test
+	@Timeout(120)
+	void concurrentFirstUseOfBindingsKeepsTheMapConsistent() throws Exception {
+		List<String> names = new ArrayList<>();
+		for (int i = 0; i < 1000; i++) {
+			names.add("binding-" + i);
+		}
+		ExecutorService executor = Executors.newFixedThreadPool(16);
+		try {
+			for (int round = 0; round < 5; round++) {
+				GenericApplicationContext context = new GenericApplicationContext();
+				context.refresh();
+				BindingServiceProperties properties = new BindingServiceProperties();
+				properties.setApplicationContext(context);
+
+				CountDownLatch start = new CountDownLatch(1);
+				List<Future<?>> futures = new ArrayList<>();
+				for (int thread = 0; thread < 16; thread++) {
+					List<String> shuffled = new ArrayList<>(names);
+					Collections.shuffle(shuffled, new Random(thread));
+					futures.add(executor.submit(() -> {
+						start.await();
+						shuffled.forEach(properties::getBindingProperties);
+						return null;
+					}));
+				}
+				start.countDown();
+				for (Future<?> future : futures) {
+					future.get(30, TimeUnit.SECONDS);
+				}
+				assertThat(properties.getBindings().keySet()).containsExactlyInAnyOrderElementsOf(names);
+			}
+		}
+		finally {
+			executor.shutdownNow();
+		}
 	}
 
 }
