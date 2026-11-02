@@ -132,6 +132,7 @@
 ** xref:bus/configuration.adoc[]
 ** xref:bus/custom-events.adoc[]
 ** xref:bus/application-properties.adoc[]
+** xref:bus/jgroups.adoc[]
 
 
 #** xref:spring-cloud-stream/overview-application-model.adoc[]

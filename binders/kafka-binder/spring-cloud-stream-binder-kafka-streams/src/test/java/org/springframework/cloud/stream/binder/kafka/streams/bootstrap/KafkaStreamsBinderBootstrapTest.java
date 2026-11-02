@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.bootstrap;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Consumer;
@@ -24,6 +25,7 @@ import tools.jackson.databind.JavaType;
 import tools.jackson.databind.type.TypeFactory;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.security.JaasUtils;
+import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.GlobalKTable;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
@@ -80,6 +82,21 @@ class KafkaStreamsBinderBootstrapTest {
 					+ embeddedKafka.getBrokersAsString(),
 				excludeKafkaAutoConfigParam(excludeKafkaAutoConfig))) { // @checkstyle:off
 		} // @checkstyle:on
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	void kafkaStreamsBinderUsesKafkaBinderBrokerList() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(SimpleKafkaStreamsApplication.class)
+				.web(WebApplicationType.NONE).run(
+					"--spring.cloud.function.definition=input1",
+					"--spring.cloud.stream.kafka.streams.bindings.input1-in-0.consumer.application-id"
+							+ "=testKafkaStreamsBinderUsesKafkaBinderBrokerList",
+					"--spring.cloud.stream.kafka.binder.brokers[0]=" + embeddedKafka.getBrokersAsString())) {
+			Map<String, Object> properties = context.getBean("streamConfigGlobalProperties", Map.class);
+			assertThat(properties.get(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG))
+					.isEqualTo(List.of(embeddedKafka.getBrokersAsString()));
+		}
 	}
 
 	@ParameterizedTest

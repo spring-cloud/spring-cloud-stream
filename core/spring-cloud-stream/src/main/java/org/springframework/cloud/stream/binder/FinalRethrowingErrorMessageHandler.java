@@ -22,7 +22,7 @@ import org.springframework.messaging.MessagingException;
 
 /**
  * A MessageHandler that always is the last subscriber (on a {@link BinderErrorChannel})
- * that throws an exception if it the only subscriber (aside from the bridge to the global
+ * that throws an exception if the only subscriber (aside from the bridge to the global
  * error channel). It is typically only used if a binder implementation does not return a
  * handled from {@code getErrorMessageHandler()}.
  *

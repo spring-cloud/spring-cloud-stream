@@ -99,6 +99,7 @@ import org.springframework.util.StringUtils;
  * @author Artem Bilan
  * @author Gary Russell
  * @author Byungjun You
+ * @author Ngoc Nhan
  * @since 1.1
  */
 public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties, P extends ProducerProperties, PP extends ProvisioningProvider<C, P>>
@@ -272,11 +273,11 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		DefaultBinderTypeRegistry binderTypeRegistry =
 			AbstractMessageChannelBinder.this.getApplicationContext().getBean(DefaultBinderTypeRegistry.class);
 		Map<String, BinderType> binderTypes = binderTypeRegistry.getAll();
-		if (binderTypes.entrySet().size() > 1 && getBindingServiceProperties().getDefaultBinder() != null) {
+		if (binderTypes.size() > 1 && getBindingServiceProperties().getDefaultBinder() != null) {
 			return getBindingServiceProperties().getDefaultBinder();
 		}
-		Assert.isTrue(binderTypes.entrySet().size() <= 1, "More than one binder types found, but no binder specified on the binding");
-		return (binderTypes.entrySet().size() < 1) ? null : binderTypes.keySet().iterator().next();
+		Assert.isTrue(binderTypes.size() <= 1, "More than one binder types found, but no binder specified on the binding");
+		return binderTypes.isEmpty() ? null : binderTypes.keySet().iterator().next();
 	}
 
 	/**
@@ -477,7 +478,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * the binder must wire this channel into the producer endpoint so that errors are
 	 * forwarded to it.
 	 * @return the message handler for sending data to the target middleware
-	 * @throws Exception when producer messsage handler failed to be created
+	 * @throws Exception when producer message handler failed to be created
 	 */
 	protected MessageHandler createProducerMessageHandler(ProducerDestination destination,
 			P producerProperties, MessageChannel channel, MessageChannel errorChannel)

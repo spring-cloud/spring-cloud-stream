@@ -1,0 +1,43 @@
+[[jgroups]]
+= JGroups Support
+
+Spring Cloud Bus supports JGroups as an alternative transport for broadcasting `RemoteApplicationEvent` instances between application instances in a cluster.
+
+To use JGroups as the transport, add the `spring-cloud-starter-bus-jgroups` dependency to your application.
+
+== Configuration
+
+The JGroups starter supports configuring the cluster name through the `spring.cloud.bus.jgroups.cluster-name` property.
+
+The default cluster name is `spring-cloud-bus`.
+
+For example, to configure a custom cluster name:
+
+[source,yaml]
+----
+spring:
+  cloud:
+    bus:
+      jgroups:
+        cluster-name: my-bus-cluster
+----
+
+Applications that need to communicate through the same JGroups cluster must use compatible JGroups transport and cluster configurations.
+
+== How It Works
+
+The JGroups starter provides a `BusBridge` implementation that sends Spring Cloud Bus events through a JGroups channel. Incoming messages are deserialized into `RemoteApplicationEvent` instances and delegated to Spring Cloud Bus for normal event processing.
+
+The starter's auto-configuration backs off when another `BusBridge` bean is already configured.
+
+== Dependency
+
+Add the following dependency to your Maven project:
+
+[source,xml]
+----
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-bus-jgroups</artifactId>
+</dependency>
+----

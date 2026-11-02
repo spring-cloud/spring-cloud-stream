@@ -16,7 +16,10 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.util.Map;
 import java.util.stream.Stream;
+
+import org.apache.kafka.streams.StreamsConfig;
 
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +29,8 @@ import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStr
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.mock.env.MockEnvironment;
+import org.springframework.kafka.config.KafkaStreamsConfiguration;
 import org.springframework.kafka.config.StreamsBuilderFactoryBeanConfigurer;
 import org.springframework.kafka.core.CleanupConfig;
 
@@ -39,6 +44,56 @@ import static org.mockito.Mockito.when;
  * @author wadhwaroh-lang
  */
 class KafkaStreamsBinderSupportAutoConfigurationTests {
+
+	@Test
+	void kafkaBinderBrokerListIsUsedAsStreamsFallback() {
+		MockEnvironment environment = new MockEnvironment()
+				.withProperty("spring.cloud.stream.kafka.binder.brokers[0]", "host1:9092")
+				.withProperty("spring.cloud.stream.kafka.binder.brokers[1]", "host2:9092");
+
+		assertThat(streamConfigGlobalProperties(environment).get(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG))
+				.isEqualTo("host1:9092,host2:9092");
+	}
+
+	@Test
+	void kafkaBinderBrokerStringIsUsedAsStreamsFallback() {
+		MockEnvironment environment = new MockEnvironment()
+				.withProperty("spring.cloud.stream.kafka.binder.brokers", "host1:9092,host2:9092");
+
+		assertThat(streamConfigGlobalProperties(environment).get(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG))
+				.isEqualTo("host1:9092,host2:9092");
+	}
+
+	@Test
+	void streamsBrokerListPreventsKafkaBinderFallback() {
+		MockEnvironment environment = new MockEnvironment()
+				.withProperty("spring.cloud.stream.kafka.streams.binder.brokers[0]", "streams-host:9092")
+				.withProperty("spring.cloud.stream.kafka.binder.brokers[0]", "kafka-host:9092");
+
+		assertThat(streamConfigGlobalProperties(environment).get(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG))
+				.isEqualTo("localhost:9092");
+	}
+
+	@Test
+	void emptyKafkaBinderBrokersLeaveStreamsDefaultUnchanged() {
+		MockEnvironment environment = new MockEnvironment()
+				.withProperty("spring.cloud.stream.kafka.binder.brokers", "");
+
+		assertThat(streamConfigGlobalProperties(environment).get(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG))
+				.isEqualTo("localhost:9092");
+	}
+
+	private Map<String, Object> streamConfigGlobalProperties(MockEnvironment environment) {
+		KafkaStreamsBinderConfigurationProperties binderProperties = mock(KafkaStreamsBinderConfigurationProperties.class);
+		when(binderProperties.getKafkaConnectionString()).thenReturn("localhost:9092");
+		when(binderProperties.mergedConsumerConfiguration()).thenReturn(Map.of());
+		when(binderProperties.mergedProducerConfiguration()).thenReturn(Map.of());
+
+		return new KafkaStreamsBinderSupportAutoConfiguration().streamConfigGlobalProperties(
+				binderProperties,
+				new KafkaStreamsConfiguration(Map.of(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092")),
+				environment, mock(SendToDlqAndContinue.class));
+	}
 
 	@Test
 	@SuppressWarnings("unchecked")

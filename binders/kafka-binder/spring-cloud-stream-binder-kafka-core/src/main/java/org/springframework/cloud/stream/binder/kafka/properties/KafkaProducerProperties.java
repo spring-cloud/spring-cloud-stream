@@ -275,7 +275,7 @@ public class KafkaProducerProperties {
 	/**
 	 * @return the transaction manager bean name.
 	 *
-	 * Transaction manager bean name (must be {@code KafkaAwareTransactionManager}.
+	 * Transaction manager bean name (must be {@code KafkaAwareTransactionManager}).
 	 */
 	public String getTransactionManager() {
 		return this.transactionManager;

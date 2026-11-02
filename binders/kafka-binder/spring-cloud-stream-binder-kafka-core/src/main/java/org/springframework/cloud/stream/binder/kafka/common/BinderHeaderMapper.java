@@ -439,7 +439,7 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 
 		@Override
 		public MimeType convert(JsonNode root, DeserializationContext ctxt) {
-			if (root instanceof StringNode	) {
+			if (root instanceof StringNode) {
 				return MimeType.valueOf(root.asText());
 			}
 			else {

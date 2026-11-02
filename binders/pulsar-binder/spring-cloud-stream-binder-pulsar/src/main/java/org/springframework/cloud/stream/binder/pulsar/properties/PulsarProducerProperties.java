@@ -42,7 +42,7 @@ public class PulsarProducerProperties extends ProducerConfigProperties {
 
 	/**
 	 * Pulsar message key type for this binding (only used when schema type is
-	 * {@code }KEY_VALUE}).
+	 * {@code KEY_VALUE}).
 	 */
 	@Nullable
 	private Class<?> messageKeyType;

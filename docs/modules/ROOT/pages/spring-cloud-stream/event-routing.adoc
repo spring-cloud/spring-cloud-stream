@@ -186,7 +186,7 @@ public class SourceWithDynamicDestination {
 ----
 
 Albeit trivial you can clearly see in this example, our output is a Message with `spring.cloud.stream.sendto.destination` header
-set to the value of he input argument. The framework will consult this header and will attempt to create or discover
+set to the value of the input argument. The framework will consult this header and will attempt to create or discover
 a destination with that name and send output to it.
 
 

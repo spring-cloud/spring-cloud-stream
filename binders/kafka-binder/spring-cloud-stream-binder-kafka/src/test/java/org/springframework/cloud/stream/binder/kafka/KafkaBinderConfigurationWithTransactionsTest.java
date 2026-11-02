@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder.kafka;
 
 import java.lang.reflect.Field;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +48,7 @@ public class KafkaBinderConfigurationWithTransactionsTest {
 		.withUserConfiguration(IntegrationAutoConfiguration.class, KafkaBinderConfiguration.class, KafkaAutoConfiguration.class)
 		.withPropertyValues(
 			"spring.cloud.stream.kafka.binder.transaction.transaction-id-prefix=test-tx-",
+			"spring.cloud.stream.kafka.binder.transaction.max-age=5m",
 			"spring.kafka.bootstrap-servers=localhost:9092");
 
 	@Test
@@ -74,6 +76,14 @@ public class KafkaBinderConfigurationWithTransactionsTest {
 
 				ProducerFactory<?, ?> producerFactory = transactionManager.getProducerFactory();
 				assertThat(producerFactory).isNotNull();
+
+				org.springframework.kafka.core.DefaultKafkaProducerFactory<?, ?> defaultProducerFactory =
+					(org.springframework.kafka.core.DefaultKafkaProducerFactory<?, ?>) producerFactory;
+
+				assertThat(defaultProducerFactory.getClass())
+					.isEqualTo(org.springframework.kafka.core.DefaultKafkaProducerFactory.class);
+				assertThat(org.springframework.test.util.ReflectionTestUtils.getField(defaultProducerFactory, "maxAge"))
+					.isEqualTo(Duration.ofMinutes(5).toMillis());
 
 				// Verify customizer was applied - check if our flag was set
 				TransactionClientFactoryCustomizerConfig config =

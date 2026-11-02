@@ -74,7 +74,7 @@ docker-compose -f ./kafka-cluster.yml -f ./schema-registry.yml down
 
 [#_all_the_things]
 === All The Things
-The scripts can be chained together to start the cluster, UI and schema registry with the following commmand:
+The scripts can be chained together to start the cluster, UI and schema registry with the following command:
 [source,shell]
 ----
 docker-compose -f kafka-cluster.yml -f ./control-center-ui.yml -f ./schema-registry.yml up

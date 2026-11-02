@@ -126,7 +126,7 @@ public class ConsumerProperties {
 
 	/**
 	 * Allows you to further qualify which RetryTemplate to use for a specific consumer
-	 * binding..
+	 * binding.
 	 */
 	private String retryTemplateName;
 

@@ -96,7 +96,7 @@ public class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator i
 		kafkaProperties.buildAdminProperties();
 		this.configurationProperties = kafkaStreamsBinderConfigurationProperties;
 		this.adminClientProperties = kafkaProperties.buildAdminProperties();
-		KafkaTopicProvisioner.normalalizeBootPropsWithBinder(this.adminClientProperties, kafkaProperties,
+		KafkaTopicProvisioner.normalizeBootPropsWithBinder(this.adminClientProperties, kafkaProperties,
 				kafkaStreamsBinderConfigurationProperties);
 		this.kafkaStreamsRegistry = kafkaStreamsRegistry;
 		this.kafkaStreamsBindingInformationCatalogue = kafkaStreamsBindingInformationCatalogue;
@@ -150,7 +150,7 @@ public class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator i
 
 	private Map<String, Object> buildDetails(KafkaStreams kafkaStreams) throws Exception {
 		final Map<String, Object> details = new HashMap<>();
-		final Map<String, Object> perAppdIdDetails = new HashMap<>();
+		final Map<String, Object> perAppIdDetails = new HashMap<>();
 
 		boolean isRunningResult;
 		if (isKafkaStreams25) {
@@ -176,10 +176,10 @@ public class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator i
 				threadDetail.put("standbyTasks", taskDetails(metadata.standbyTasks()));
 				threadDetails.put(metadata.threadName(), threadDetail);
 			}
-			perAppdIdDetails.put("threadDetails", threadDetails);
+			perAppIdDetails.put("threadDetails", threadDetails);
 			final StreamsBuilderFactoryBean streamsBuilderFactoryBean = this.kafkaStreamsRegistry.streamBuilderFactoryBean(kafkaStreams);
 			final String applicationId = (String) streamsBuilderFactoryBean.getStreamsConfiguration().get(StreamsConfig.APPLICATION_ID_CONFIG);
-			details.put(applicationId, perAppdIdDetails);
+			details.put(applicationId, perAppIdDetails);
 		}
 		else {
 			final StreamsBuilderFactoryBean streamsBuilderFactoryBean = this.kafkaStreamsRegistry.streamBuilderFactoryBean(kafkaStreams);

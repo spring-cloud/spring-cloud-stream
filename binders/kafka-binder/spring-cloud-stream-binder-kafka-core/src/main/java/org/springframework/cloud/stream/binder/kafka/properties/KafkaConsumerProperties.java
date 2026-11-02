@@ -205,7 +205,7 @@ public class KafkaConsumerProperties {
 	private String transactionManager;
 
 	/**
-	 * Set to false to NOT commit the offset of a successfully recovered recovered in the after rollback processor.
+	 * Set to false to NOT commit the offset of a successfully recovered in the after rollback processor.
 	 */
 	private boolean txCommitRecovered = true;
 
@@ -493,7 +493,7 @@ public class KafkaConsumerProperties {
 	/**
 	 * @return the transaction manager bean name.
 	 *
-	 * Transaction manager bean name (must be {@code KafkaAwareTransactionManager}.
+	 * Transaction manager bean name (must be {@code KafkaAwareTransactionManager}).
 	 */
 	public String getTransactionManager() {
 		return this.transactionManager;

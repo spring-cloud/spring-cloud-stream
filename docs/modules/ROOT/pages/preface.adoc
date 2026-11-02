@@ -44,7 +44,7 @@ When the "`Cloud Stream`" option should appears, select it.
 +
 Basically, you choose the messaging middleware to which your application binds.
 We recommend using the one you have already installed or feel more comfortable with installing and running.
-Also, as you can see from the Initilaizer screen, there are a few other options you can choose.
+Also, as you can see from the Initializr screen, there are a few other options you can choose.
 For example, you can choose Gradle as your build tool instead of Maven (the default).
 . In the *Artifact* field, type 'logging-consumer'.
 +

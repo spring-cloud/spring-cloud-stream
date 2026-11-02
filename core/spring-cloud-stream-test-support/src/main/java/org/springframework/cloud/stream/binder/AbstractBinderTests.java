@@ -104,7 +104,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 	 * Attempt to receive a message on the given channel, waiting up to 1s *
 	 * additionalMultiplier * {@link #timeoutMultiplier}).
 	 *
-	 * Allows accomodating tests which are slower than normal (e.g. retry).
+	 * Allows accommodating tests which are slower than normal (e.g. retry).
 	 */
 	protected Message<?> receive(PollableChannel channel, int additionalMultiplier) {
 		long startTime = System.currentTimeMillis();

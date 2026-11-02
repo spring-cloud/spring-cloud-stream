@@ -384,7 +384,7 @@ Let's say that the new consumer gets partitions `2` and `3`.
 When this new Spring Cloud Stream consumer calls this `onPartitionsAssigned` method, it will see that this is the initial assignment for partition `2` and `3` on this consumer.
 Therefore, it will do the seek operation because of the conditional check on the `initial` argument.
 In the case of the first consumer, it now only has partitions `0` and `1`
-However, for this consumer it was simply a rebalance event and not considered as an intial assignment.
+However, for this consumer it was simply a rebalance event and not considered as an initial assignment.
 Thus, it will not re-seek to the given offsets because of the conditional check on the `initial` argument.
 
 [[how-do-i-manually-acknowledge-using-kafka-binder?]]
@@ -503,7 +503,7 @@ I need to send a key along with the payload of the record, is there a way to do 
 
 It is often necessary that you want to send associative data structure like a map as the record with a key and value.
 Spring Cloud Stream allows you to do that in a straightforward manner.
-Following is a basic blueprint for doing this, but you may want to adapt it to your paricular use case.
+Following is a basic blueprint for doing this, but you may want to adapt it to your particular use case.
 
 Here is sample producer method (aka `Supplier`).
 

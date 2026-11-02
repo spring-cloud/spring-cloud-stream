@@ -19,7 +19,7 @@ package org.springframework.cloud.stream.binder;
 import org.springframework.context.ApplicationEvent;
 
 /**
- * ApplicationEvent fired whenever the the Binding is created.
+ * ApplicationEvent fired whenever the Binding is created.
  *
  * @author Oleg Zhurakousky
  * @since 2.0

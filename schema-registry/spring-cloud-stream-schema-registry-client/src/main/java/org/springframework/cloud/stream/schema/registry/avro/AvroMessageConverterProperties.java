@@ -34,9 +34,8 @@ public class AvroMessageConverterProperties {
 
 	/**
 	 * The source directory of Apache Avro schema. This schema is used by this converter.
-	 * If this schema depends on other schemas consider defining those those dependent
-	 * ones in the {@link #schemaImports}
-	 * @parameter
+	 * If this schema depends on other schemas consider defining those dependent
+	 * ones in the {@link #schemaImports}.
 	 */
 	private Resource[] schemaLocations;
 
@@ -44,7 +43,6 @@ public class AvroMessageConverterProperties {
 	 * A list of files or directories that should be loaded first thus making them
 	 * importable by subsequent schemas. Note that imported files should not reference
 	 * each other.
-	 * @parameter
 	 */
 	private Resource[] schemaImports;
 

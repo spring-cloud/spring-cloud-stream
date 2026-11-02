@@ -87,7 +87,7 @@ public class MessageValues implements Map<String, Object> {
 	}
 
 	/**
-	 * Convert to a {@link Message} using a the default
+	 * Convert to a {@link Message} using the default
 	 * {@link org.springframework.integration.support.MessageBuilder}.
 	 * @return the Message
 	 */

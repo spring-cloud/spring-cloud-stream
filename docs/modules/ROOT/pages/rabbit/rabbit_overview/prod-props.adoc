@@ -9,7 +9,7 @@ in the format of `spring.cloud.stream.rabbit.default.producer.<property>=<value>
 
 Also, keep in mind that binding specific property will override its equivalent in the default.
 
-altermateExchange.binding.queue::
+alternateExchange.binding.queue::
 If the exchange does not already exist, and a `name` is provided, bind this queue to the alternate exchange.
 A simple durable queue with no arguments is provisioned; if more sophisticated configuration is required, you must configure and bind the queue yourself.
 +
