@@ -91,13 +91,14 @@ class BindingServiceTests {
 	}
 
 	@Test
-	@Timeout(120)
-	void concurrentFirstUseOfBindingsKeepsTheMapConsistent() throws Exception {
+	@Timeout(60)
+	void concurrentFirstUseOfBindingsSharesSingleInstancePerName() throws Exception {
 		List<String> names = new ArrayList<>();
-		for (int i = 0; i < 1000; i++) {
+		for (int i = 0; i < 200; i++) {
 			names.add("binding-" + i);
 		}
-		ExecutorService executor = Executors.newFixedThreadPool(16);
+		int threads = 8;
+		ExecutorService executor = Executors.newFixedThreadPool(threads);
 		try {
 			for (int round = 0; round < 5; round++) {
 				GenericApplicationContext context = new GenericApplicationContext();
@@ -106,19 +107,27 @@ class BindingServiceTests {
 				properties.setApplicationContext(context);
 
 				CountDownLatch start = new CountDownLatch(1);
-				List<Future<?>> futures = new ArrayList<>();
-				for (int thread = 0; thread < 16; thread++) {
+				List<Future<Map<String, BindingProperties>>> futures = new ArrayList<>();
+				for (int thread = 0; thread < threads; thread++) {
 					List<String> shuffled = new ArrayList<>(names);
 					Collections.shuffle(shuffled, new Random(thread));
 					futures.add(executor.submit(() -> {
 						start.await();
-						shuffled.forEach(properties::getBindingProperties);
-						return null;
+						Map<String, BindingProperties> seen = new HashMap<>();
+						shuffled.forEach(name -> seen.put(name, properties.getBindingProperties(name)));
+						return seen;
 					}));
 				}
 				start.countDown();
-				for (Future<?> future : futures) {
-					future.get(30, TimeUnit.SECONDS);
+
+				assertThat(properties.getBindings()).isNotNull();
+				for (Future<Map<String, BindingProperties>> future : futures) {
+					Map<String, BindingProperties> seen = future.get(30, TimeUnit.SECONDS);
+					for (String name : names) {
+						// every thread must observe the instance that is actually registered,
+						// otherwise its mutations (destination, consumer, producer) are lost
+						assertThat(seen.get(name)).isSameAs(properties.getBindings().get(name));
+					}
 				}
 				assertThat(properties.getBindings().keySet()).containsExactlyInAnyOrderElementsOf(names);
 			}
@@ -126,6 +135,18 @@ class BindingServiceTests {
 		finally {
 			executor.shutdownNow();
 		}
+	}
+
+	@Test
+	void bindingsLookupIsCaseInsensitive() {
+		GenericApplicationContext context = new GenericApplicationContext();
+		context.refresh();
+		BindingServiceProperties properties = new BindingServiceProperties();
+		properties.setApplicationContext(context);
+
+		BindingProperties lower = properties.getBindingProperties("myBinding");
+		assertThat(properties.getBindingProperties("MYBINDING")).isSameAs(lower);
+		assertThat(properties.getBindings()).hasSize(1);
 	}
 
 }
