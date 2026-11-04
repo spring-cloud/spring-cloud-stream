@@ -63,15 +63,17 @@ The aforementioned retry properties are applicable for these methods as well.
 
 Use the following API method to retrieve the `KeyQueryMetadata` object associated with the combination of given store and key.
 
-```
+[source,java]
+----
 public <K> KeyQueryMetadata getKeyQueryMetadata(String store, K key, Serializer<K> serializer)
-```
+----
 
 Use the following API method to retrieve the `KakfaStreams` object associated with the combination of given store and key.
 
-```
+[source,java]
+----
 public <K> KafkaStreams getKafkaStreams(String store, K key, Serializer<K> serializer)
-```
+----
 
 [[customizing-store-query-parameters]]
 == Customizing Store Query Parameters
@@ -80,9 +82,10 @@ Sometimes it is necessary that you need to fine tune the store query parameters 
 For this purpose, starting with the `4.0.1` version of the binder, you can provide a bean for `StoreQueryParametersCustomizer` which is a functional interface with a `customize` method that takes a `StoreQueryParameter` as the argument.
 Here is its method signature.
 
-```
+[source,java]
+----
 StoreQueryParameters<T> customize(StoreQueryParameters<T> storeQueryParameters);
-```
+----
 
 Using this approach, applications can further customize the `StoreQueryParameters` such as enabling stale stores.
 

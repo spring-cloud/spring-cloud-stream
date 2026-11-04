@@ -8,9 +8,10 @@ This section describes how Micrometer-based observability is enabled in the reac
 There is built-in support for observability in producer binding.
 To enable it, set the following property:
 
-```
+[source,properties]
+----
 spring.cloud.stream.kafka.binder.enable-observation
-```
+----
 
 When this property is set to `true`, you can observe the publishing of records.
 Both publishing records using `StreamBridge` and regular `Supplier<?>` beans can be observed.
@@ -28,7 +29,8 @@ In the second case, if there was no upstream observation started, it will start 
 
 === Example: Function with Observability
 
-```
+[source,java]
+----
 @Bean
 Function<Flux<ReceiverRecord<byte[], byte[]>>, Flux<Message<String>>> receive(ObservationRegistry observationRegistry) {
 
@@ -50,7 +52,7 @@ Function<Flux<ReceiverRecord<byte[], byte[]>>, Flux<Message<String>>> receive(Ob
 			.contextWrite(context -> context.put(ObservationThreadLocalAccessor.KEY, receiverObservation));
     });
 }
-```
+----
 
 In this example:
 
@@ -63,7 +65,8 @@ In this example:
 
 === Example: Consumer with Observability
 
-```
+[source,java]
+----
 @Bean
 Consumer<Flux<ReceiverRecord<?, String>>> receive(ObservationRegistry observationRegistry, @Value("${spring.kafka.bootstrap-servers}") String bootstrap) {
 	return f -> f.doOnNext(record -> KafkaReceiverObservation.RECEIVER_OBSERVATION.observation(
@@ -73,7 +76,7 @@ Consumer<Flux<ReceiverRecord<?, String>>> receive(ObservationRegistry observatio
 			observationRegistry).observe(() -> System.out.println(record)))
 		.subscribe();
 }
-```
+----
 
 In this case:
 

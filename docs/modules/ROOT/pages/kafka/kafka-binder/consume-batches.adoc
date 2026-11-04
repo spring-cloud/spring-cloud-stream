@@ -6,10 +6,11 @@ The size of the batch is controlled by Kafka consumer properties `max.poll.recor
 
 When receiving the batches, the following type signatures are allowed:
 
-```
+[source,java]
+----
 List<Person>
 Message<List<Person>>
-```
+----
 
 In the first option of `List<Person>`, the listener will not get any message headers.
 If the second type signature (`Message<List<Person>>`) is used, then the headers can be accessed; however, all the headers are still be in the form of a `Collection`.
