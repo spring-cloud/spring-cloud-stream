@@ -186,7 +186,8 @@ public class BindableFunctionProxyFactory extends BindableProxyFactory implement
 		if (this.supportedBindableFeatures.isPollable()) {
 			PollableMessageSource pollableSource = (PollableMessageSource) getBindingTargetFactory(PollableMessageSource.class).createInput(name);
 			if (context != null && !context.containsBean(name)) {
-				context.registerBean(name, PollableMessageSource.class, () -> pollableSource);
+				// register with the concrete type so that bean type matching (e.g., IntegrationManagement) works
+				context.registerBean(name, (Class<PollableMessageSource>) pollableSource.getClass(), () -> pollableSource);
 			}
 			this.inputHolders.put(name, new BoundTargetHolder(pollableSource, true));
 		}
