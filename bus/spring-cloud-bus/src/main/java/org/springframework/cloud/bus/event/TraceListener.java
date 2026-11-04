@@ -16,67 +16,70 @@
 
 package org.springframework.cloud.bus.event;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.time.Clock;
+import java.time.Instant;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.springframework.boot.actuate.web.exchanges.HttpExchangeRepository;
-import org.springframework.context.event.EventListener;
+import org.springframework.cloud.bus.trace.Trace;
+import org.springframework.cloud.bus.trace.TraceRepository;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 
 /**
- * A listener for sends and acks of remote application events. Inserts a record for each
- * signal in the {@link HttpExchangeRepository}.
+ * A listener for application event sends and acks. Inserts a record for each signal into
+ * the {@link TraceRepository}.
  *
  * @author Dave Syer
+ * @author Ngoc Nhan
  */
-public class TraceListener {
+public class TraceListener implements ApplicationListener<ApplicationEvent> {
 
-	private static Log log = LogFactory.getLog(TraceListener.class);
+	private final TraceRepository repository;
 
-	private HttpExchangeRepository repository;
-
-	public TraceListener(HttpExchangeRepository repository) {
+	public TraceListener(TraceRepository repository) {
 		this.repository = repository;
 	}
 
-	@EventListener
-	public void onAck(AckRemoteApplicationEvent event) {
-		Map<String, Object> trace = getReceivedTrace(event);
-		// FIXME boot 2 this.repository.add(trace);
-	}
+	@Override
+	public void onApplicationEvent(ApplicationEvent event) {
 
-	@EventListener
-	public void onSend(SentApplicationEvent event) {
-		Map<String, Object> trace = getSentTrace(event);
-		// FIXME boot 2 this.repository.add(trace);
-	}
-
-	protected Map<String, Object> getSentTrace(SentApplicationEvent event) {
-		Map<String, Object> map = new LinkedHashMap<String, Object>();
-		map.put("signal", "spring.cloud.bus.sent");
-		map.put("type", event.getType().getSimpleName());
-		map.put("id", event.getId());
-		map.put("origin", event.getOriginService());
-		map.put("destination", event.getDestinationService());
-		if (log.isDebugEnabled()) {
-			log.debug(map);
+		if (event instanceof AckRemoteApplicationEvent ackRemoteApplicationEvent) {
+			this.repository.add(getReceivedTrace(ackRemoteApplicationEvent));
 		}
-		return map;
+
+		if (event instanceof SentApplicationEvent sentApplicationEvent) {
+			this.repository.add(getSentTrace(sentApplicationEvent));
+		}
+
 	}
 
-	protected Map<String, Object> getReceivedTrace(AckRemoteApplicationEvent event) {
-		Map<String, Object> map = new LinkedHashMap<String, Object>();
-		map.put("signal", "spring.cloud.bus.ack");
-		map.put("event", event.getEvent().getSimpleName());
-		map.put("id", event.getAckId());
-		map.put("origin", event.getOriginService());
-		map.put("destination", event.getAckDestinationService());
-		if (log.isDebugEnabled()) {
-			log.debug(map);
-		}
-		return map;
+	/**
+	 * Creates a trace for a acks application event.
+	 * @param event the acks application event
+	 * @return the trace for the acks application event
+	 */
+	protected Trace getReceivedTrace(AckRemoteApplicationEvent event) {
+
+		Trace trace = new Trace(Instant.now(Clock.systemUTC()), "spring.cloud.bus.ack",
+				event.getEvent().getSimpleName());
+		trace.setId(event.getAckId());
+		trace.setOrigin(event.getOriginService());
+		trace.setDestination(event.getAckDestinationService());
+		return trace;
+	}
+
+	/**
+	 * Creates a trace for a sent application event.
+	 * @param event the sent application event
+	 * @return the trace for the sent application event
+	 */
+	protected Trace getSentTrace(SentApplicationEvent event) {
+
+		Trace trace = new Trace(Instant.now(Clock.systemUTC()), "spring.cloud.bus.sent",
+				event.getType().getSimpleName());
+		trace.setId(event.getId());
+		trace.setOrigin(event.getOriginService());
+		trace.setDestination(event.getDestinationService());
+		return trace;
 	}
 
 }
