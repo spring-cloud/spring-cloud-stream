@@ -20,9 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.integration.channel.DirectChannel;
+import org.springframework.integration.support.management.micrometer.MicrometerMetricsCaptor;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
@@ -30,6 +32,7 @@ import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Verifies that {@link DefaultPollableMessageSource} invokes the full
@@ -41,6 +44,30 @@ class DefaultPollableMessageSourceTests {
 	private final List<String> events = new ArrayList<>();
 
 	private final AtomicInteger receiveCount = new AtomicInteger();
+
+	@Test
+	void pollRecordsSpringIntegrationMetrics() {
+		SimpleMeterRegistry registry = new SimpleMeterRegistry();
+		DefaultPollableMessageSource source = newSource();
+		source.setBeanName("pollableInput-in-0");
+		source.registerMetricsCaptor(new MicrometerMetricsCaptor(registry));
+		source.setSource(this::message);
+
+		assertThat(source.poll(noopHandler())).isTrue();
+		assertThatThrownBy(() -> source.poll(m -> {
+			throw new IllegalStateException("boom");
+		})).isInstanceOf(RuntimeException.class);
+
+		assertThat(registry.find("spring.integration.receive")
+				.tag("name", "pollableInput-in-0").tag("type", "source").counter().count()).isEqualTo(2.0);
+		assertThat(registry.find("spring.integration.send").tag("type", "handler")
+				.tag("name", "pollableInput-in-0").tag("result", "success").timer().count()).isEqualTo(1);
+		assertThat(registry.find("spring.integration.send").tag("type", "handler")
+				.tag("name", "pollableInput-in-0").tag("result", "failure").timer().count()).isEqualTo(1);
+
+		source.destroy();
+		assertThat(registry.find("spring.integration.send").timers()).isEmpty();
+	}
 
 	@Test
 	void successfulPollInvokesFullInterceptorLifecycleInOrder() {

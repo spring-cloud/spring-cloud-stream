@@ -18,8 +18,11 @@ package org.springframework.cloud.stream.binder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 
+import io.micrometer.observation.ObservationRegistry;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.logging.Log;
@@ -27,6 +30,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.support.NameMatchMethodPointcutAdvisor;
+import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.context.Lifecycle;
 import org.springframework.core.AttributeAccessor;
@@ -42,6 +46,15 @@ import org.springframework.integration.core.MessagingTemplate;
 import org.springframework.integration.support.DefaultErrorMessageStrategy;
 import org.springframework.integration.support.ErrorMessageStrategy;
 import org.springframework.integration.support.ErrorMessageUtils;
+import org.springframework.integration.support.management.IntegrationManagement;
+import org.springframework.integration.support.management.metrics.CounterFacade;
+import org.springframework.integration.support.management.metrics.MeterFacade;
+import org.springframework.integration.support.management.metrics.MetricsCaptor;
+import org.springframework.integration.support.management.metrics.SampleFacade;
+import org.springframework.integration.support.management.metrics.TimerFacade;
+import org.springframework.integration.support.management.observation.DefaultMessageReceiverObservationConvention;
+import org.springframework.integration.support.management.observation.IntegrationObservation;
+import org.springframework.integration.support.management.observation.MessageReceiverContext;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -66,7 +79,7 @@ import org.springframework.util.ReflectionUtils;
  * @since 2.0
  *
  */
-public class DefaultPollableMessageSource implements PollableMessageSource, Lifecycle {
+public class DefaultPollableMessageSource implements PollableMessageSource, Lifecycle, IntegrationManagement, BeanNameAware {
 
 	private static final Log log = LogFactory.getLog(DefaultPollableMessageSource.class);
 
@@ -98,12 +111,63 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 
 	private boolean running;
 
+	private final Set<MeterFacade> meters = ConcurrentHashMap.newKeySet();
+
+	private String beanName;
+
+	private MetricsCaptor metricsCaptor;
+
+	private ObservationRegistry observationRegistry = ObservationRegistry.NOOP;
+
+	private CounterFacade receiveCounter;
+
+	private TimerFacade successTimer;
+
 	/**
 	 * @param messageConverter instance of {@link SmartMessageConverter}. Can be null.
 	 */
 	public DefaultPollableMessageSource(
 			@Nullable SmartMessageConverter messageConverter) {
 		this.messageConverter = messageConverter;
+	}
+
+	@Override
+	public void setBeanName(String name) {
+		this.beanName = name;
+	}
+
+	@Override
+	public String getComponentName() {
+		return this.beanName;
+	}
+
+	@Override
+	public String getComponentType() {
+		return "pollable-message-source";
+	}
+
+	@Override
+	public void registerMetricsCaptor(MetricsCaptor captor) {
+		this.metricsCaptor = captor;
+	}
+
+	@Override
+	public void registerObservationRegistry(ObservationRegistry registry) {
+		Assert.notNull(registry, "'observationRegistry' must not be null");
+		this.observationRegistry = registry;
+	}
+
+	@Override
+	public boolean isObserved() {
+		return !ObservationRegistry.NOOP.equals(this.observationRegistry);
+	}
+
+	@Override
+	public void destroy() {
+		this.meters.forEach(MeterFacade::remove);
+		this.meters.clear();
+		this.receiveCounter = null;
+		this.successTimer = null;
 	}
 
 	public void setSource(MessageSource<?> source) {
@@ -235,9 +299,24 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 
 	@Override
 	public boolean poll(MessageHandler handler, ParameterizedTypeReference<?> type) {
-		Message<?> message = this.receive(type);
+		Message<?> message;
+		try {
+			message = this.receive(type);
+		}
+		catch (RuntimeException ex) {
+			if (this.metricsCaptor != null) {
+				receiveCounter(false, ex.getClass().getSimpleName()).increment();
+			}
+			throw ex;
+		}
 		if (message == null) {
 			return false;
+		}
+		if (this.metricsCaptor != null) {
+			if (this.receiveCounter == null) {
+				this.receiveCounter = receiveCounter(true, "none");
+			}
+			this.receiveCounter.increment();
 		}
 
 		AcknowledgmentCallback ackCallback = StaticMessageHeaderAccessor.getAcknowledgmentCallback(message);
@@ -361,12 +440,63 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 	}
 
 	private void doHandleMessage(MessageHandler handler, Message<?> message) {
+		if (isObserved()) {
+			IntegrationObservation.HANDLER.observation(null,
+							DefaultMessageReceiverObservationConvention.INSTANCE,
+							() -> new MessageReceiverContext(message, getComponentName()),
+							this.observationRegistry)
+					.observe(() -> invokeHandler(handler, message));
+		}
+		else if (this.metricsCaptor != null) {
+			SampleFacade sample = this.metricsCaptor.start();
+			try {
+				invokeHandler(handler, message);
+				if (this.successTimer == null) {
+					this.successTimer = sendTimer(true, "none");
+				}
+				sample.stop(this.successTimer);
+			}
+			catch (RuntimeException ex) {
+				sample.stop(sendTimer(false, ex.getClass().getSimpleName()));
+				throw ex;
+			}
+		}
+		else {
+			invokeHandler(handler, message);
+		}
+	}
+
+	private void invokeHandler(MessageHandler handler, Message<?> message) {
 		try {
 			handler.handleMessage(message);
 		}
 		catch (Throwable t) { // NOSONAR
 			throw new MessageHandlingException(message, t);
 		}
+	}
+
+	private CounterFacade receiveCounter(boolean success, String exception) {
+		CounterFacade counter = this.metricsCaptor.counterBuilder(RECEIVE_COUNTER_NAME)
+				.tag("name", getComponentName())
+				.tag("type", "source")
+				.tag("result", success ? "success" : "failure")
+				.tag("exception", exception)
+				.description("Messages received")
+				.build();
+		this.meters.add(counter);
+		return counter;
+	}
+
+	private TimerFacade sendTimer(boolean success, String exception) {
+		TimerFacade timer = this.metricsCaptor.timerBuilder(SEND_TIMER_NAME)
+				.tag("type", "handler")
+				.tag("name", getComponentName())
+				.tag("result", success ? "success" : "failure")
+				.tag("exception", exception)
+				.description("Send processing time")
+				.build();
+		this.meters.add(timer);
+		return timer;
 	}
 
 	/**
