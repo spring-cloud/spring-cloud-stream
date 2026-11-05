@@ -28,6 +28,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.PartitionInfo;
 
@@ -47,6 +49,8 @@ import org.springframework.util.Assert;
  */
 public abstract class AbstractKafkaBinderHealthIndicator extends AbstractHealthIndicator implements DisposableBean {
 
+	private static final Log LOGGER = LogFactory.getLog(AbstractKafkaBinderHealthIndicator.class);
+
 	private static final int DEFAULT_TIMEOUT = 60;
 
 	protected int timeout = DEFAULT_TIMEOUT;
@@ -60,6 +64,10 @@ public abstract class AbstractKafkaBinderHealthIndicator extends AbstractHealthI
 	protected boolean considerDownWhenAnyPartitionHasNoLeader = true;
 
 	private final ConsumerFactory<?, ?> consumerFactory;
+
+	// the last health check failure that was logged at WARN level, so that repeated
+	// health probes failing for the same reason do not flood the logs.
+	private volatile String lastLoggedFailure;
 
 	public AbstractKafkaBinderHealthIndicator(ConsumerFactory<?, ?> consumerFactory) {
 		this.consumerFactory = consumerFactory;
@@ -107,6 +115,7 @@ public abstract class AbstractKafkaBinderHealthIndicator extends AbstractHealthI
 				.build();
 		}
 		catch (ExecutionException ex) {
+			logFailure("Kafka binder health check failed", ex.getCause() != null ? ex.getCause() : ex);
 			return Health.down(ex).build();
 		}
 		catch (TimeoutException ex) {
@@ -126,9 +135,11 @@ public abstract class AbstractKafkaBinderHealthIndicator extends AbstractHealthI
 					this.metadataConsumer.listTopics(Duration.ofSeconds(this.timeout));
 				}
 				catch (Exception e) {
+					logFailure("Kafka binder health check failed to list topics; the Kafka broker may not be reachable", e);
 					return Health.down().withDetail("No topic information available",
 						"Kafka broker is not reachable").build();
 				}
+				this.lastLoggedFailure = null;
 				return Health.unknown().withDetail("No bindings found",
 					"Kafka binder may not be bound to destinations on the broker").build();
 			}
@@ -160,6 +171,8 @@ public abstract class AbstractKafkaBinderHealthIndicator extends AbstractHealthI
 							this.metadataConsumer.listTopics(Duration.ofSeconds(this.timeout));
 						}
 						catch (Exception ex) {
+							logFailure("Kafka binder health check failed to list topics for pattern destination '"
+									+ topic + "'", ex);
 							return Health.down()
 								.withDetail("Cluster not connected",
 									"Destination provided is a pattern, but cannot connect to the cluster for any verification")
@@ -168,6 +181,7 @@ public abstract class AbstractKafkaBinderHealthIndicator extends AbstractHealthI
 					}
 				}
 			}
+			this.lastLoggedFailure = null;
 			if (downMessages.isEmpty()) {
 				return Health.up().withDetail("topicsInUse", checkedTopics).build();
 			}
@@ -179,7 +193,26 @@ public abstract class AbstractKafkaBinderHealthIndicator extends AbstractHealthI
 			}
 		}
 		catch (Exception ex) {
+			logFailure("Kafka binder health check failed to retrieve topic information", ex);
 			return Health.down(ex).build();
+		}
+	}
+
+	/**
+	 * Log a health check failure, including its cause chain. Health probes typically run
+	 * at a regular interval, so a failure is only logged at WARN level when it differs
+	 * from the previously logged one; repeats of the same failure are logged at DEBUG.
+	 * @param message the log message
+	 * @param ex the failure
+	 */
+	private void logFailure(String message, Throwable ex) {
+		String failure = ex.getClass().getName() + ": " + ex.getMessage();
+		if (!failure.equals(this.lastLoggedFailure)) {
+			this.lastLoggedFailure = failure;
+			LOGGER.warn(message, ex);
+		}
+		else if (LOGGER.isDebugEnabled()) {
+			LOGGER.debug(message, ex);
 		}
 	}
 
