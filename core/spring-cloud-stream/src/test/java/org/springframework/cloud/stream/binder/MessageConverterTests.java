@@ -26,7 +26,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * @author Gary Russell
@@ -127,14 +127,8 @@ class MessageConverterTests {
 	void badDecode() throws Exception {
 		byte[] bytes = new byte[] { (byte) 0xff, 99 };
 		Message<byte[]> message = new GenericMessage<>(bytes);
-		try {
-			EmbeddedHeaderUtils.extractHeaders(message, false);
-			fail("Exception expected");
-		}
-		catch (Exception e) {
-			String s = EmbeddedHeaderUtils.decodeExceptionMessage(message);
-			assertThat(e).isInstanceOf(BufferUnderflowException.class);
-		}
+		assertThatThrownBy(() -> EmbeddedHeaderUtils.extractHeaders(message, false))
+				.isInstanceOf(BufferUnderflowException.class);
 	}
 
 }

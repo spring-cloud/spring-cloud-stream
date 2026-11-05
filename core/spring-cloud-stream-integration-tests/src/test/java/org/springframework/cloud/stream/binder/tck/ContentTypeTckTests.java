@@ -742,7 +742,7 @@ class ContentTypeTckTests {
 
 		/**
 		 * Even though this MessageConverter has nothing to do with Kryo it still shows
-		 * how Kryo conversion can be customized/overriden since it simply overriding a
+		 * how Kryo conversion can be customized/overridden since it simply overriding a
 		 * converter for contentType 'application/x-java-object'.
 		 *
 		 */
