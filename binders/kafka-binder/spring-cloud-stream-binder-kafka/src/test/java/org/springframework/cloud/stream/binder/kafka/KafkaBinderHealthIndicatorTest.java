@@ -32,15 +32,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import org.springframework.boot.health.contributor.Health;
 import org.springframework.boot.health.contributor.Status;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.cloud.stream.binder.kafka.common.TopicInformation;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
+import org.springframework.util.StringUtils;
 
 import static java.util.Collections.singleton;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -289,6 +293,76 @@ class KafkaBinderHealthIndicatorTest {
 
 		org.mockito.Mockito.verify(this.consumerFactory, Mockito.times(2))
 				.createConsumer();
+	}
+
+	@Test
+	@ExtendWith(OutputCaptureExtension.class)
+	void consumerCreationFailureIsLoggedWithItsCause(CapturedOutput output) {
+		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
+		topicsInUse.put(TEST_TOPIC, new TopicInformation(
+				"foo-healthIndicator", partitions, false));
+		org.mockito.BDDMockito.given(consumerFactory.createConsumer())
+				.willThrow(new KafkaException("Failed to construct kafka consumer",
+						new IllegalStateException("No delegate deserializer configured")));
+
+		Health health = indicator.health();
+
+		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
+		assertThat(output).contains("Kafka binder health check failed to retrieve topic information")
+				.contains("Failed to construct kafka consumer")
+				.contains("No delegate deserializer configured");
+	}
+
+	@Test
+	@ExtendWith(OutputCaptureExtension.class)
+	void repeatedIdenticalFailureIsLoggedOnlyOnce(CapturedOutput output) {
+		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
+		topicsInUse.put(TEST_TOPIC, new TopicInformation(
+				"foo-healthIndicator", partitions, false));
+		org.mockito.BDDMockito.given(consumerFactory.createConsumer())
+				.willThrow(new KafkaException("Failed to construct kafka consumer",
+						new IllegalStateException("No delegate deserializer configured")));
+
+		assertThat(indicator.health().getStatus()).isEqualTo(Status.DOWN);
+		assertThat(indicator.health().getStatus()).isEqualTo(Status.DOWN);
+		assertThat(indicator.health().getStatus()).isEqualTo(Status.DOWN);
+
+		assertThat(StringUtils.countOccurrencesOf(output.getOut(),
+				"Kafka binder health check failed to retrieve topic information")).isEqualTo(1);
+	}
+
+	@Test
+	@ExtendWith(OutputCaptureExtension.class)
+	void failureIsLoggedAgainAfterHealthRecovers(CapturedOutput output) {
+		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
+		topicsInUse.put(TEST_TOPIC, new TopicInformation(
+				"foo-healthIndicator", partitions, false));
+		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC))
+				.willThrow(new KafkaException("metadata unavailable"))
+				.willReturn(partitions)
+				.willThrow(new KafkaException("metadata unavailable"));
+
+		assertThat(indicator.health().getStatus()).isEqualTo(Status.DOWN);
+		assertThat(indicator.health().getStatus()).isEqualTo(Status.UP);
+		assertThat(indicator.health().getStatus()).isEqualTo(Status.DOWN);
+
+		assertThat(StringUtils.countOccurrencesOf(output.getOut(),
+				"Kafka binder health check failed to retrieve topic information")).isEqualTo(2);
+	}
+
+	@Test
+	@ExtendWith(OutputCaptureExtension.class)
+	void listTopicsFailureWithRegexTopicIsLogged(CapturedOutput output) {
+		topicsInUse.put(REGEX_TOPIC, new TopicInformation(
+				"regex-healthIndicator", null, true));
+		org.mockito.BDDMockito.given(consumer.listTopics(any(Duration.class)))
+				.willThrow(new KafkaException("cluster unreachable"));
+
+		assertThat(indicator.health().getStatus()).isEqualTo(Status.DOWN);
+
+		assertThat(output).contains("Kafka binder health check failed to list topics for pattern destination '"
+				+ REGEX_TOPIC + "'")
+				.contains("cluster unreachable");
 	}
 
 	@Test
