@@ -116,6 +116,8 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 				Message<?> result = null;
 				Exception completionException = null;
 				boolean preReceiveCompleted = false;
+				int sendInterceptorIndex = -1;
+				Message<?> sendCompletionMessage = null;
 				try {
 					for (ChannelInterceptor interceptor : interceptors()) {
 						if (!interceptor.preReceive(DUMMY_CHANNEL)) {
@@ -132,11 +134,14 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 								return null;
 							}
 						}
-						for (ChannelInterceptor interceptor : interceptors()) {
-							result = interceptor.preSend(result, DUMMY_CHANNEL);
+						List<ChannelInterceptor> sendInterceptors = interceptors();
+						for (int i = 0; i < sendInterceptors.size(); i++) {
+							sendCompletionMessage = result;
+							result = sendInterceptors.get(i).preSend(result, DUMMY_CHANNEL);
 							if (result == null) {
 								return null;
 							}
+							sendInterceptorIndex = i;
 						}
 					}
 					else {
@@ -155,6 +160,13 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 							interceptor.afterReceiveCompletion(result, DUMMY_CHANNEL,
 									completionException);
 						}
+						if (completionException != null || result == null) {
+							// Complete the interceptors whose preSend already succeeded, the
+							// same way AbstractMessageChannel does when a message is
+							// discarded or an interceptor fails (GH-3316).
+							triggerAfterSendCompletion(interceptors(), sendInterceptorIndex,
+									sendCompletionMessage, false, completionException);
+						}
 					}
 				}
 			}
@@ -170,6 +182,32 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 
 	private List<ChannelInterceptor> interceptors() {
 		return List.copyOf(this.interceptors);
+	}
+
+	/**
+	 * Invokes {@link ChannelInterceptor#afterSendCompletion(Message, MessageChannel,
+	 * boolean, Exception)} in reverse order for the interceptors whose
+	 * {@link ChannelInterceptor#preSend(Message, MessageChannel)} already succeeded, the
+	 * same way {@code AbstractMessageChannel} completes a discarded or failed delivery.
+	 * @param interceptors the interceptor list that was applied
+	 * @param sendInterceptorIndex index of the last interceptor whose {@code preSend}
+	 * succeeded; -1 when none did
+	 * @param message the message passed to the next interceptor's {@code preSend}
+	 * @param sent whether the message was sent
+	 * @param ex the failure exception, if any
+	 */
+	private void triggerAfterSendCompletion(List<ChannelInterceptor> interceptors,
+			int sendInterceptorIndex, @Nullable Message<?> message, boolean sent,
+			@Nullable Exception ex) {
+		for (int i = sendInterceptorIndex; i >= 0; i--) {
+			try {
+				interceptors.get(i).afterSendCompletion(message, DUMMY_CHANNEL, sent, ex);
+			}
+			catch (Throwable innerEx) {
+				log.error("Exception from afterSendCompletion in " + interceptors.get(i),
+						innerEx);
+			}
+		}
 	}
 
 	public void setRetryTemplate(RetryTemplate retryTemplate) {
@@ -346,14 +384,25 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 		Message<?> message = this.source.receive();
 		if (message != null && type != null && this.messageConverter != null) {
 			Object payload;
-			if (FunctionTypeUtils.isTypeCollection(type.getType()) || FunctionTypeUtils.isTypeMap(type.getType())) {
-				payload = this.messageConverter.fromMessage(message, FunctionTypeUtils.getRawType(type.getType()), type.getType());
+			try {
+				if (FunctionTypeUtils.isTypeCollection(type.getType()) || FunctionTypeUtils.isTypeMap(type.getType())) {
+					payload = this.messageConverter.fromMessage(message, FunctionTypeUtils.getRawType(type.getType()), type.getType());
+				}
+				else {
+					payload = this.messageConverter.fromMessage(message, (Class<?>) type.getType());
+				}
+				if (payload == null) {
+					throw new MessageConversionException(message, "No converter could convert Message");
+				}
 			}
-			else {
-				payload = this.messageConverter.fromMessage(message, (Class<?>) type.getType());
-			}
-			if (payload == null) {
-				throw new MessageConversionException(message, "No converter could convert Message");
+			catch (RuntimeException ex) {
+				// All interceptors completed their preSend before the conversion was
+				// attempted, so they must receive afterSendCompletion when it fails, the
+				// same way AbstractMessageChannel completes a failed delivery (GH-3316).
+				List<ChannelInterceptor> appliedInterceptors = interceptors();
+				triggerAfterSendCompletion(appliedInterceptors, appliedInterceptors.size() - 1,
+						message, false, ex);
+				throw ex;
 			}
 			message = MessageBuilder.withPayload(payload).copyHeaders(message.getHeaders()).build();
 		}
