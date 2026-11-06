@@ -71,6 +71,7 @@ import org.springframework.util.ReflectionUtils;
  * @author Nico Heller
  * @author Kurt Hong
  * @author Omer Celik
+ * @author Caio Vinicius
  */
 public class KafkaBinderMetrics
 		implements MeterBinder, ApplicationListener<BindingCreatedEvent>, AutoCloseable, Lifecycle {
@@ -88,7 +89,7 @@ public class KafkaBinderMetrics
 
 	private final KafkaBinderConfigurationProperties binderConfigurationProperties;
 
-	private ConsumerFactory<?, ?> defaultConsumerFactory;
+	private volatile ConsumerFactory<?, ?> defaultConsumerFactory;
 
 	private final MeterRegistry meterRegistry;
 
@@ -206,9 +207,12 @@ public class KafkaBinderMetrics
 
 	private long findTotalTopicGroupLag(String topic, String group, Map<String, Consumer<?, ?>> metadataConsumers) {
 		long lag = 0;
+		// Resolve the factory outside the mapping function, so consumerFactoryLock is never
+		// taken while holding a ConcurrentHashMap bin lock that close() needs for clear()
+		ConsumerFactory<?, ?> consumerFactory = createConsumerFactory();
 		Consumer<?, ?> metadataConsumer = metadataConsumers.computeIfAbsent(
 				group,
-				(g) -> createConsumerFactory().createConsumer(g, "monitoring"));
+				(g) -> consumerFactory.createConsumer(g, "monitoring"));
 		List<PartitionInfo> partitionInfos = metadataConsumer
 				.partitionsFor(topic);
 		List<TopicPartition> topicPartitions = new LinkedList<>();
@@ -248,12 +252,22 @@ public class KafkaBinderMetrics
 
 	/**
 	 * Double-Checked Locking Optimization was used to avoid unnecessary locking overhead.
+	 * The lock is acquired interruptibly, so that {@link #close()}, which holds it while
+	 * shutting down the scheduler, can stop a lag task waiting for it.
 	 */
 	private ConsumerFactory<?, ?> createConsumerFactory() {
-		if (this.defaultConsumerFactory == null) {
+		ConsumerFactory<?, ?> consumerFactory = this.defaultConsumerFactory;
+		if (consumerFactory == null) {
 			try {
-				this.consumerFactoryLock.lock();
-				if (this.defaultConsumerFactory == null) {
+				this.consumerFactoryLock.lockInterruptibly();
+			}
+			catch (InterruptedException ex) {
+				Thread.currentThread().interrupt();
+				throw new IllegalStateException("Interrupted while waiting to create the consumer factory", ex);
+			}
+			try {
+				consumerFactory = this.defaultConsumerFactory;
+				if (consumerFactory == null) {
 					Map<String, Object> props = new HashMap<>();
 					props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
 						ByteArrayDeserializer.class);
@@ -269,15 +283,15 @@ public class KafkaBinderMetrics
 							this.binderConfigurationProperties
 								.getKafkaConnectionString());
 					}
-					this.defaultConsumerFactory = new DefaultKafkaConsumerFactory<>(
-						props);
+					consumerFactory = new DefaultKafkaConsumerFactory<>(props);
+					this.defaultConsumerFactory = consumerFactory;
 				}
 			}
 			finally {
 				this.consumerFactoryLock.unlock();
 			}
 		}
-		return this.defaultConsumerFactory;
+		return consumerFactory;
 	}
 
 	@Override
