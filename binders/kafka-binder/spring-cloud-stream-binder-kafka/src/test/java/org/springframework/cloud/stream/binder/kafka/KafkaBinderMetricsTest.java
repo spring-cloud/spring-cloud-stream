@@ -18,12 +18,18 @@ package org.springframework.cloud.stream.binder.kafka;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterFilter;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -42,11 +48,15 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.cloud.stream.binder.kafka.common.TopicInformation;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
+import org.springframework.integration.test.util.TestUtils;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -58,6 +68,7 @@ import static org.mockito.Mockito.mock;
  * @author Nico Heller
  * @author Kurt Hong
  * @author Artem Bilan
+ * @author Caio Vinicius
  */
 class KafkaBinderMetricsTest {
 
@@ -385,12 +396,88 @@ class KafkaBinderMetricsTest {
 		assertThat(meterRegistry.find(KafkaBinderMetrics.OFFSET_LAG_METRIC_NAME).meters()).isEmpty();
 	}
 
+	@Test
+	@SuppressWarnings("unchecked")
+	void closeDoesNotDeadlockWithFirstOffsetLagComputation() throws Exception {
+		topicsInUse.put(
+			TEST_TOPIC,
+			new TopicInformation("group7-metrics", partitions(new Node(0, null, 0)), false)
+		);
+		KafkaBinderConfigurationProperties properties =
+			new KafkaBinderConfigurationProperties(new KafkaProperties(), mock(ObjectProvider.class));
+		properties.setBrokers("localhost:9");
+		properties.getMetrics().setOffsetLagMetricsInterval(Duration.ofSeconds(30));
+		LockAwareMeterRegistry registry = new LockAwareMeterRegistry();
+		// No consumer factory: the first lag computation has to create it under consumerFactoryLock
+		KafkaBinderMetrics lagMetrics = new KafkaBinderMetrics(binder, properties, null, registry);
+		registry.lock = TestUtils.getPropertyValue(lagMetrics, "consumerFactoryLock", ReentrantLock.class);
+		Map<?, ?> metadataConsumers = TestUtils.getPropertyValue(lagMetrics, "metadataConsumers", Map.class);
+
+		// As on BindingCreatedEvent: registers the gauge and schedules the lag task (initial delay 1s)
+		lagMetrics.bindTo(registry);
+		ScheduledExecutorService scheduler = lagMetrics.scheduler;
+
+		// As on context shutdown
+		registry.closing = true;
+		Thread closer = new Thread(lagMetrics::close, "kafka-binder-metrics-close");
+		closer.setDaemon(true);
+		closer.start();
+		closer.join(TimeUnit.SECONDS.toMillis(20));
+
+		assumeThat(registry.observedQueuedThread)
+			.as("the lag task did not reach consumerFactoryLock while close() was holding it")
+			.isTrue();
+		assertThat(closer.isAlive())
+			.as("close() did not return within 20s:%n%s", metricsThreadDump())
+			.isFalse();
+		assertThat(scheduler.isTerminated()).isTrue();
+		assertThat(metadataConsumers).isEmpty();
+	}
+
 	private List<PartitionInfo> partitions(Node... nodes) {
 		List<PartitionInfo> partitions = new ArrayList<>();
 		for (int i = 0; i < nodes.length; i++) {
 			partitions.add(new PartitionInfo(TEST_TOPIC, i, nodes[i], null, null));
 		}
 		return partitions;
+	}
+
+	private static String metricsThreadDump() {
+		return Thread.getAllStackTraces().entrySet().stream()
+			.filter((entry) -> Arrays.stream(entry.getValue())
+				.anyMatch((frame) -> frame.getClassName().equals(KafkaBinderMetrics.class.getName())))
+			.map((entry) -> "\"" + entry.getKey().getName() + "\" " + entry.getKey().getState() + "\n"
+				+ Arrays.stream(entry.getValue())
+					.limit(12)
+					.map((frame) -> "\tat " + frame)
+					.collect(Collectors.joining("\n")))
+			.collect(Collectors.joining("\n"));
+	}
+
+	/**
+	 * close() removes the offset-lag meters while holding consumerFactoryLock; here the
+	 * removal waits (at most 5s) until the lag task is queued on the same lock.
+	 */
+	static class LockAwareMeterRegistry extends SimpleMeterRegistry {
+
+		volatile boolean closing;
+
+		volatile ReentrantLock lock;
+
+		volatile boolean observedQueuedThread;
+
+		@Override
+		public Meter remove(Meter meter) {
+			if (this.closing) {
+				long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+				while (!this.lock.hasQueuedThreads() && System.nanoTime() < deadline) {
+					Thread.onSpinWait();
+				}
+				this.observedQueuedThread = this.lock.hasQueuedThreads();
+			}
+			return super.remove(meter);
+		}
+
 	}
 
 }
