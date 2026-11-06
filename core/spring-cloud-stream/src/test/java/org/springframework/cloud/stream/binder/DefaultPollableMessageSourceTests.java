@@ -25,9 +25,12 @@ import org.junit.jupiter.api.Test;
 
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.support.management.micrometer.MicrometerMetricsCaptor;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.converter.MessageConversionException;
+import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageBuilder;
 
@@ -176,6 +179,84 @@ class DefaultPollableMessageSourceTests {
 			"postReceive",
 			"preSend",
 			"afterReceiveCompletion");
+	}
+
+	@Test
+	void afterSendCompletionInvokedForAppliedInterceptorsWhenLaterPreSendReturnsNull() {
+		DefaultPollableMessageSource source = newSource();
+		source.setSource(this::message);
+		source.addInterceptor(sendRecorder("A"));
+		source.addInterceptor(sendRecorder("B"));
+		source.addInterceptor(new ChannelInterceptor() {
+			@Override
+			public Message<?> preSend(Message<?> message, MessageChannel channel) {
+				return null; // e.g. a filtering interceptor discarding the message
+			}
+		});
+
+		assertThat(source.poll(noopHandler())).isFalse();
+
+		// Same contract as AbstractMessageChannel: interceptors whose preSend succeeded
+		// are completed once, in reverse order, with sent=false.
+		assertThat(this.events).containsExactly(
+			"A.preSend",
+			"B.preSend",
+			"B.afterSendCompletion(sent=false)",
+			"A.afterSendCompletion(sent=false)");
+	}
+
+	@Test
+	void afterSendCompletionInvokedOnlyForAppliedInterceptorsWhenFirstPreSendReturnsNull() {
+		DefaultPollableMessageSource source = newSource();
+		source.setSource(this::message);
+		source.addInterceptor(new ChannelInterceptor() {
+			@Override
+			public Message<?> preSend(Message<?> message, MessageChannel channel) {
+				return null;
+			}
+		});
+		source.addInterceptor(sendRecorder("A"));
+
+		assertThat(source.poll(noopHandler())).isFalse();
+
+		assertThat(this.events).isEmpty();
+	}
+
+	@Test
+	void afterSendCompletionInvokedWhenPayloadConversionFails() {
+		DefaultPollableMessageSource source = new DefaultPollableMessageSource(
+			new StringMessageConverter());
+		source.setSource(() -> MessageBuilder.withPayload((Object) "not a Foo").build());
+		source.addInterceptor(sendRecorder("A"));
+
+		assertThatThrownBy(() -> source.poll(noopHandler(), new ParameterizedTypeReference<Foo>() { }))
+			.isInstanceOf(MessageConversionException.class);
+
+		assertThat(this.events).containsExactly(
+			"A.preSend",
+			"A.afterSendCompletion(sent=false):exception");
+	}
+
+	private ChannelInterceptor sendRecorder(String name) {
+		return new ChannelInterceptor() {
+
+			@Override
+			public Message<?> preSend(Message<?> message, MessageChannel channel) {
+				DefaultPollableMessageSourceTests.this.events.add(name + ".preSend");
+				return message;
+			}
+
+			@Override
+			public void afterSendCompletion(Message<?> message, MessageChannel channel,
+					boolean sent, Exception ex) {
+				DefaultPollableMessageSourceTests.this.events.add(name + ".afterSendCompletion(sent=" + sent + ")"
+						+ (ex != null ? ":exception" : ""));
+			}
+
+		};
+	}
+
+	record Foo(String value) {
 	}
 
 	private DefaultPollableMessageSource newSource() {
