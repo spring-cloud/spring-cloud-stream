@@ -87,6 +87,7 @@ class KafkaBinderHealthIndicatorTest {
 	@BeforeEach
 	public void setup() {
 		MockitoAnnotations.initMocks(this);
+		topicsInUse.clear();
 		org.mockito.BDDMockito.given(consumerFactory.createConsumer())
 				.willReturn(consumer);
 		org.mockito.BDDMockito.given(binder.getTopicsInUse()).willReturn(topicsInUse);
@@ -362,6 +363,55 @@ class KafkaBinderHealthIndicatorTest {
 
 		assertThat(output).contains("Kafka binder health check failed to list topics for pattern destination '"
 				+ REGEX_TOPIC + "'")
+				.contains("cluster unreachable");
+	}
+
+	@Test
+	@ExtendWith(OutputCaptureExtension.class)
+	void timeoutIsLogged(CapturedOutput output) {
+		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
+		topicsInUse.put(TEST_TOPIC, new TopicInformation(
+				"timeout-healthIndicator", partitions, false));
+		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC))
+				.willAnswer(invocation -> {
+					Thread.sleep(1000 * 60 * 5);
+					return partitions;
+				});
+		this.indicator.setTimeout(1);
+
+		assertThat(indicator.health().getStatus()).isEqualTo(Status.DOWN);
+
+		assertThat(output).contains("Kafka binder health check timed out after 1 seconds");
+	}
+
+	@Test
+	@ExtendWith(OutputCaptureExtension.class)
+	void downStatusDueToMissingLeaderDoesNotResetFailureLogging(CapturedOutput output) {
+		final List<PartitionInfo> noLeader = partitions(new Node(-1, null, 0));
+		topicsInUse.put(TEST_TOPIC, new TopicInformation(
+				"noleader-healthIndicator", noLeader, false));
+		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC))
+				.willThrow(new KafkaException("metadata unavailable"))
+				.willReturn(noLeader)
+				.willThrow(new KafkaException("metadata unavailable"));
+
+		assertThat(indicator.health().getStatus()).isEqualTo(Status.DOWN);
+		assertThat(indicator.health().getStatus()).isEqualTo(Status.DOWN);
+		assertThat(indicator.health().getStatus()).isEqualTo(Status.DOWN);
+
+		assertThat(StringUtils.countOccurrencesOf(output.getOut(),
+				"Kafka binder health check failed to retrieve topic information")).isEqualTo(1);
+	}
+
+	@Test
+	@ExtendWith(OutputCaptureExtension.class)
+	void listTopicsFailureWithNoBindingsIsLogged(CapturedOutput output) {
+		org.mockito.BDDMockito.given(consumer.listTopics(any(Duration.class)))
+				.willThrow(new KafkaException("cluster unreachable"));
+
+		assertThat(indicator.health().getStatus()).isEqualTo(Status.DOWN);
+
+		assertThat(output).contains("Kafka binder health check failed to list topics; the Kafka broker may not be reachable")
 				.contains("cluster unreachable");
 	}
 

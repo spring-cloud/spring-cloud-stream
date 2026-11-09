@@ -27,6 +27,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -65,9 +66,14 @@ public abstract class AbstractKafkaBinderHealthIndicator extends AbstractHealthI
 
 	private final ConsumerFactory<?, ?> consumerFactory;
 
+	private static final long WARN_REMINDER_INTERVAL_NANOS = TimeUnit.MINUTES.toNanos(5);
+
 	// the last health check failure that was logged at WARN level, so that repeated
 	// health probes failing for the same reason do not flood the logs.
-	private volatile String lastLoggedFailure;
+	private final AtomicReference<LoggedFailure> lastLoggedFailure = new AtomicReference<>();
+
+	private record LoggedFailure(String key, long timestampNanos) {
+	}
 
 	public AbstractKafkaBinderHealthIndicator(ConsumerFactory<?, ?> consumerFactory) {
 		this.consumerFactory = consumerFactory;
@@ -109,16 +115,19 @@ public abstract class AbstractKafkaBinderHealthIndicator extends AbstractHealthI
 		}
 		catch (InterruptedException ex) {
 			Thread.currentThread().interrupt();
+			logFailure("Kafka binder health check was interrupted while waiting for partition information", ex);
 			return Health.down()
 				.withDetail("Interrupted while waiting for partition information in",
 					this.timeout + " seconds")
 				.build();
 		}
 		catch (ExecutionException ex) {
-			logFailure("Kafka binder health check failed", ex.getCause() != null ? ex.getCause() : ex);
+			logFailure("Kafka binder health check failed", ex);
 			return Health.down(ex).build();
 		}
 		catch (TimeoutException ex) {
+			logFailure("Kafka binder health check timed out after " + this.timeout
+					+ " seconds while retrieving partition information; the Kafka broker may not be reachable", ex);
 			return Health.down().withDetail("Failed to retrieve partition information in",
 				this.timeout + " seconds").build();
 		}
@@ -139,7 +148,6 @@ public abstract class AbstractKafkaBinderHealthIndicator extends AbstractHealthI
 					return Health.down().withDetail("No topic information available",
 						"Kafka broker is not reachable").build();
 				}
-				this.lastLoggedFailure = null;
 				return Health.unknown().withDetail("No bindings found",
 					"Kafka binder may not be bound to destinations on the broker").build();
 			}
@@ -181,8 +189,8 @@ public abstract class AbstractKafkaBinderHealthIndicator extends AbstractHealthI
 					}
 				}
 			}
-			this.lastLoggedFailure = null;
 			if (downMessages.isEmpty()) {
+				this.lastLoggedFailure.set(null);
 				return Health.up().withDetail("topicsInUse", checkedTopics).build();
 			}
 			else {
@@ -201,14 +209,19 @@ public abstract class AbstractKafkaBinderHealthIndicator extends AbstractHealthI
 	/**
 	 * Log a health check failure, including its cause chain. Health probes typically run
 	 * at a regular interval, so a failure is only logged at WARN level when it differs
-	 * from the previously logged one; repeats of the same failure are logged at DEBUG.
+	 * from the previously logged one or when a reminder interval has elapsed; other
+	 * repeats are logged at DEBUG.
 	 * @param message the log message
 	 * @param ex the failure
 	 */
 	private void logFailure(String message, Throwable ex) {
-		String failure = ex.getClass().getName() + ": " + ex.getMessage();
-		if (!failure.equals(this.lastLoggedFailure)) {
-			this.lastLoggedFailure = failure;
+		String key = message + " | " + ex.getClass().getName() + ": " + ex.getMessage();
+		long now = System.nanoTime();
+		LoggedFailure previous = this.lastLoggedFailure.get();
+		boolean shouldWarn = previous == null || !previous.key().equals(key)
+				|| now - previous.timestampNanos() >= WARN_REMINDER_INTERVAL_NANOS;
+		// compareAndSet ensures only one of several concurrent probes logs at WARN
+		if (shouldWarn && this.lastLoggedFailure.compareAndSet(previous, new LoggedFailure(key, now))) {
 			LOGGER.warn(message, ex);
 		}
 		else if (LOGGER.isDebugEnabled()) {
