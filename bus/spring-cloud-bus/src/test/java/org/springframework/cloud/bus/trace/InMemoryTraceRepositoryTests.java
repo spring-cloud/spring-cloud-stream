@@ -22,6 +22,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 /**
  * Test for {@link InMemoryTraceRepository}.
@@ -61,6 +62,24 @@ public class InMemoryTraceRepositoryTests {
 		assertThat(trace).hasSize(2);
 		assertThat(trace.get(0).getType()).isEqualTo("type2");
 		assertThat(trace.get(1).getType()).isEqualTo("type3");
+	}
+
+	@Test
+	void setCapacityWhenNotPositiveThrows() {
+		assertThatIllegalArgumentException().isThrownBy(() -> this.repository.setCapacity(0));
+		assertThatIllegalArgumentException().isThrownBy(() -> this.repository.setCapacity(-1));
+	}
+
+	@Test
+	void addWhenCapacityLoweredEvictsOldest() {
+		for (Trace trace : this.createTraces()) {
+			this.repository.add(trace);
+		}
+		this.repository.setCapacity(1);
+		Trace extra = new Trace(Instant.now(), "spring.cloud.bus.ack", "type4");
+		this.repository.add(extra);
+
+		assertThat(this.repository.findAll()).containsExactly(extra);
 	}
 
 	private List<Trace> createTraces() {

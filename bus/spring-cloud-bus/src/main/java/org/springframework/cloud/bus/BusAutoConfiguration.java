@@ -81,16 +81,16 @@ public class BusAutoConfiguration {
 		}
 
 		@Bean
-		@ConditionalOnBean(TraceRepository.class)
 		@ConditionalOnMissingBean
 		public TraceBusEndpoint traceBusEndpoint(TraceRepository traceRepository) {
 			return new TraceBusEndpoint(traceRepository);
 		}
 
+		// keeps the bean name used before the introduction of TraceRepository, so that
+		// applications overriding it by name keep working
 		@Bean
-		@ConditionalOnBean(TraceRepository.class)
 		@ConditionalOnMissingBean
-		public TraceListener traceListener(TraceRepository traceRepository) {
+		public TraceListener ackTraceListener(TraceRepository traceRepository) {
 			return new TraceListener(traceRepository);
 		}
 

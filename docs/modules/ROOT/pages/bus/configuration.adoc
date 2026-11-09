@@ -67,6 +67,12 @@ To handle the ack signals yourself, you could add an `@EventListener` for the
 tracing). Alternatively, you could tap into the `TraceRepository` and mine the data from
 there.
 
+NOTE: Previous versions integrated with the Spring Boot `HttpExchangeRepository`, but that integration never recorded any traces.
+Bus traces are now kept in a Spring Cloud Bus `TraceRepository` and exposed only through the `bustrace` endpoint.
+The `TraceListener` constructor now takes a `TraceRepository` instead of an `HttpExchangeRepository`.
+The `ackTraceListener` bean name is unchanged.
+Tracing requires both `spring.cloud.bus.trace.enabled=true` and exposure of the `bustrace` endpoint.
+
 NOTE: Any Bus application can trace acks. However, sometimes, it is
 useful to do this in a central service that can do more complex
 queries on the data or forward it to a specialized tracing service.

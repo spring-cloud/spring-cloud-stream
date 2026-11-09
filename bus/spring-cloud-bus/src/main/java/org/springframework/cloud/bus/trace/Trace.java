@@ -149,4 +149,10 @@ public final class Trace {
 		return Objects.hash(this.timestamp, this.signal, this.type, this.id, this.origin, this.destination);
 	}
 
+	@Override
+	public String toString() {
+		return "Trace{timestamp=" + this.timestamp + ", signal=" + this.signal + ", type=" + this.type + ", id="
+				+ this.id + ", origin=" + this.origin + ", destination=" + this.destination + "}";
+	}
+
 }

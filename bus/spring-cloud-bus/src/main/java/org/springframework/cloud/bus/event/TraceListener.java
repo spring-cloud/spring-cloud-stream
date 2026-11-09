@@ -19,6 +19,9 @@ package org.springframework.cloud.bus.event;
 import java.time.Clock;
 import java.time.Instant;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.cloud.bus.trace.Trace;
 import org.springframework.cloud.bus.trace.TraceRepository;
 import org.springframework.context.ApplicationEvent;
@@ -32,6 +35,8 @@ import org.springframework.context.ApplicationListener;
  * @author Ngoc Nhan
  */
 public class TraceListener implements ApplicationListener<ApplicationEvent> {
+
+	private static final Log log = LogFactory.getLog(TraceListener.class);
 
 	private final TraceRepository repository;
 
@@ -64,6 +69,9 @@ public class TraceListener implements ApplicationListener<ApplicationEvent> {
 		trace.setId(event.getAckId());
 		trace.setOrigin(event.getOriginService());
 		trace.setDestination(event.getAckDestinationService());
+		if (log.isDebugEnabled()) {
+			log.debug(trace);
+		}
 		return trace;
 	}
 
@@ -79,6 +87,9 @@ public class TraceListener implements ApplicationListener<ApplicationEvent> {
 		trace.setId(event.getId());
 		trace.setOrigin(event.getOriginService());
 		trace.setDestination(event.getDestinationService());
+		if (log.isDebugEnabled()) {
+			log.debug(trace);
+		}
 		return trace;
 	}
 

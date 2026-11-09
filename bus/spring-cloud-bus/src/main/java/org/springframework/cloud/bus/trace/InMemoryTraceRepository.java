@@ -19,6 +19,8 @@ package org.springframework.cloud.bus.trace;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.springframework.util.Assert;
+
 /**
  * In-memory implementation of {@link TraceRepository}.
  *
@@ -45,9 +47,10 @@ public class InMemoryTraceRepository implements TraceRepository {
 
 	/**
 	 * Set the capacity of the in-memory repository.
-	 * @param capacity the capacity
+	 * @param capacity the capacity, must be greater than zero
 	 */
 	public void setCapacity(int capacity) {
+		Assert.isTrue(capacity > 0, "capacity must be greater than zero");
 		synchronized (this.traces) {
 			this.capacity = capacity;
 		}
@@ -64,7 +67,7 @@ public class InMemoryTraceRepository implements TraceRepository {
 	public void add(Trace trace) {
 		synchronized (this.traces) {
 			while (this.traces.size() >= this.capacity) {
-				this.traces.remove(this.reverse ? this.capacity - 1 : 0);
+				this.traces.remove(this.reverse ? this.traces.size() - 1 : 0);
 			}
 			if (this.reverse) {
 				this.traces.add(0, trace);
