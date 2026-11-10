@@ -180,6 +180,7 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 				Message<?> result = null;
 				Exception completionException = null;
 				boolean preReceiveCompleted = false;
+				List<ChannelInterceptor> sendInterceptors = List.of();
 				int sendInterceptorIndex = -1;
 				Message<?> sendCompletionMessage = null;
 				try {
@@ -198,7 +199,7 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 								return null;
 							}
 						}
-						List<ChannelInterceptor> sendInterceptors = interceptors();
+						sendInterceptors = interceptors();
 						for (int i = 0; i < sendInterceptors.size(); i++) {
 							sendCompletionMessage = result;
 							result = sendInterceptors.get(i).preSend(result, DUMMY_CHANNEL);
@@ -228,7 +229,7 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 							// Complete the interceptors whose preSend already succeeded, the
 							// same way AbstractMessageChannel does when a message is
 							// discarded or an interceptor fails (GH-3316).
-							triggerAfterSendCompletion(interceptors(), sendInterceptorIndex,
+							triggerAfterSendCompletion(sendInterceptors, sendInterceptorIndex,
 									sendCompletionMessage, false, completionException);
 						}
 					}
