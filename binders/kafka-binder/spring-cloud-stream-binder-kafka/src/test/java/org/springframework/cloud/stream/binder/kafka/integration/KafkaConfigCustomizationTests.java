@@ -99,8 +99,8 @@ class KafkaConfigCustomizationTests {
 		@Bean
 		public ConsumerConfigCustomizer consumerConfigCustomizer() {
 			return (consumerProperties, binding, destination) -> {
-				assertThat(binding).isEqualTo("process-in-0");
-				assertThat(destination).isEqualTo("process-in-0");
+				assertThat(binding).isIn("process-in-0", "kafkaBinderHealthIndicator");
+				assertThat(destination).isEqualTo(binding);
 				consumerProperties.put(ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, MyConsumerInterceptor.class.getName());
 				consumerProperties.put("foo.bean", foo());
 			};

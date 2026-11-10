@@ -22,6 +22,7 @@ import java.util.Map;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.health.autoconfigure.contributor.ConditionalOnEnabledHealthIndicator;
@@ -29,6 +30,7 @@ import org.springframework.cloud.stream.binder.kafka.KafkaBinderHealth;
 import org.springframework.cloud.stream.binder.kafka.KafkaBinderHealthIndicator;
 import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
+import org.springframework.cloud.stream.binder.kafka.support.ConsumerConfigCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.ConsumerFactory;
@@ -53,7 +55,8 @@ public class KafkaBinderHealthIndicatorConfiguration {
 	@Bean
 	public KafkaBinderHealthIndicator kafkaBinderHealthIndicator(
 			KafkaMessageChannelBinder kafkaMessageChannelBinder,
-			KafkaBinderConfigurationProperties configurationProperties) {
+			KafkaBinderConfigurationProperties configurationProperties,
+			ObjectProvider<ConsumerConfigCustomizer> consumerConfigCustomizers) {
 		Map<String, Object> props = new HashMap<>();
 		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
 				ByteArrayDeserializer.class);
@@ -72,6 +75,8 @@ public class KafkaBinderHealthIndicatorConfiguration {
 		if (StringUtils.hasText(healthIndicatorConsumerGroup)) {
 			props.put(ConsumerConfig.GROUP_ID_CONFIG, healthIndicatorConsumerGroup);
 		}
+		consumerConfigCustomizers.orderedStream().forEach(customizer ->
+				customizer.configure(props, "kafkaBinderHealthIndicator", "kafkaBinderHealthIndicator"));
 		ConsumerFactory<?, ?> consumerFactory = new DefaultKafkaConsumerFactory<>(props);
 		KafkaBinderHealthIndicator indicator = new KafkaBinderHealthIndicator(
 				kafkaMessageChannelBinder, consumerFactory);
