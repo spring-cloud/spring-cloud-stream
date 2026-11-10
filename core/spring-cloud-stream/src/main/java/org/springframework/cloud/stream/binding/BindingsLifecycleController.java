@@ -27,12 +27,14 @@ import java.util.stream.Stream;
 import tools.jackson.databind.JacksonModule;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.DefaultBinderFactory;
+import org.springframework.cloud.stream.binder.ExpressionSerializer;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
@@ -40,6 +42,7 @@ import org.springframework.cloud.stream.function.BindableFunctionProxyFactory;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.expression.Expression;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
@@ -75,6 +78,11 @@ public class BindingsLifecycleController implements ApplicationContextAware {
 		this.outputBindingsLifecycles = outputBindingsLifecycles;
 
 		JsonMapper.Builder builder = JsonMapper.builder();
+
+		// SpEL expressions (e.g., Rabbit 'delayExpression') must be rendered as strings, see GH-3175
+		SimpleModule expressionModule = new SimpleModule();
+		expressionModule.addSerializer(Expression.class, new ExpressionSerializer(Expression.class));
+		builder.addModule(expressionModule);
 
 		//this.objectMapper = new ObjectMapper(); //see https://github.com/spring-cloud/spring-cloud-stream/issues/2253
 		// we need to use ObjectMapper that could not be modified by the user.
