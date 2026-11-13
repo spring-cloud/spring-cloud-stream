@@ -25,18 +25,20 @@ Now that we started our clusters, let us try to produce data to a topic on the c
 
 To produce data to a topic named `input-topic`:
 
-```
+[source,shell]
+----
 docker exec -it broker1 /bin/kafka-console-producer --bootstrap-server localhost:29091 --topic input-topic
-```
+----
 
 Note the use of bootstrap-server at `localhost:29091`.
 This port is internal to the docker container.
 
 To consume from the `input-topic`:
 
-```
+[source,shell]
+----
 docker exec -it broker1 /bin/kafka-console-consumer --bootstrap-server localhost:29091 --topic input-topic
-```
+----
 
 Enter some data on the producer console and hit enter, you should see the same data gets echoed on the consumer console.
 

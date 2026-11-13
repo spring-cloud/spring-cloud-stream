@@ -762,7 +762,8 @@ refer to the <<kafka-binder-properties, kafka binder properties section>> for mo
 
 You can exclude `KafkaBinderMetrics` from creating the necessary infrastructure like consumers and then reporting the metrics by providing the following component in the application.
 
-```
+[source,java]
+----
 @Component
 class NoOpBindingMeters {
 	NoOpBindingMeters(MeterRegistry registry) {
@@ -770,7 +771,7 @@ class NoOpBindingMeters {
 				MeterFilter.denyNameStartsWith(KafkaBinderMetrics.OFFSET_LAG_METRIC_NAME));
 	}
 }
-```
+----
 
 More details on how to suppress meters selectively can be found https://micrometer.io/docs/concepts#_meter_filters[here].
 

@@ -9,14 +9,15 @@ Both of these customizers are part of the Spring for Apache Kafka project.
 
 Here is an example of using the `StreamsBuilderFactoryBeanConfigurer`.
 
-```
+[source,java]
+----
 @Bean
 public StreamsBuilderFactoryBeanConfigurer streamsBuilderFactoryBeanConfigurer() {
     return sfb -> sfb.setStateListener((newState, oldState) -> {
          //Do some action here!
     });
 }
-```
+----
 
 The above is shown as an illustration of the things you can do to customize the `StreamsBuilderFactoryBean`.
 You can essentially call any available mutation operations from `StreamsBuilderFactoryBean` to customize it.
@@ -25,7 +26,8 @@ This customizer will be invoked by the binder right before the factory bean is s
 Once you get access to the `StreamsBuilderFactoryBean`, you can also customize the underlying `KafkaStreams` object.
 Here is a blueprint for doing so.
 
-```
+[source,java]
+----
 @Bean
 public StreamsBuilderFactoryBeanConfigurer streamsBuilderFactoryBeanConfigurer() {
     return factoryBean -> {
@@ -39,7 +41,7 @@ public StreamsBuilderFactoryBeanConfigurer streamsBuilderFactoryBeanConfigurer()
         });
     };
 }
-```
+----
 
 `KafkaStreamsCustomizer` will be called by the `StreamsBuilderFactoryBeabn` right before the underlying `KafkaStreams` gets started.
 
@@ -48,7 +50,8 @@ If the customization needs to be different for multiple Kafka Streams processors
 
 For e.g,
 
-```
+[source,java]
+----
 @Bean
 public StreamsBuilderFactoryBeanConfigurer streamsBuilderFactoryBeanConfigurer() {
     return factoryBean -> {
@@ -64,7 +67,8 @@ public StreamsBuilderFactoryBeanConfigurer streamsBuilderFactoryBeanConfigurer()
             });
         }
     };
-```
+}
+----
 
 [[using-configurer-to-register-a-global-state-store]]
 == Using StreamsBuilderFactoryBeanConfigurer to register a global state store
@@ -73,7 +77,8 @@ As mentioned above, the binder does not provide a first class way to register gl
 For that, you need to use the customizer via `StreamsBuilderFactoryBeanConfigurer`.
 Here is how that can be done.
 
-```
+[source,java]
+----
 @Bean
 public StreamsBuilderFactoryBeanConfigurer customizer() {
     return streamsBuilderFactoryBean -> {
@@ -92,7 +97,7 @@ public StreamsBuilderFactoryBeanConfigurer customizer() {
         }
     };
 }
-```
+----
 
 Any customizations on `StreamsBuilder` must be done through the `KafkaStreamsInfrastructureCustomizer` as shown above.
 If `StreamsBuilderFactoryBean#getObject()` is called to get access to the `StreamsBuilder` object, that may not work as the bean maybe in initialization and thus run into some circular dependency issues.
@@ -105,7 +110,8 @@ If you have multiple processors, you want to attach the global state store to th
 In the error handling section, we indicated that the binder does not provide a first class way to deal with production exceptions.
 Though that is the case, you can still use the `StreamsBuilderFactoryBean` customizer to register production exception handlers. See below.
 
-```
+[source,java]
+----
 @Bean
 public StreamsBuilderFactoryBeanConfigurer configurer() {
     return fb -> {
@@ -113,7 +119,7 @@ public StreamsBuilderFactoryBeanConfigurer configurer() {
                             CustomProductionExceptionHandler.class);
     };
 }
-```
+----
 
 Once again, if you have multiple processors, you may want to set it appropriately against the correct `StreamsBuilderFactoryBean`.
 You may also add such production exception handlers using the configuration property (See below for more on that), but this is an option if you choose to go with a programmatic approach.

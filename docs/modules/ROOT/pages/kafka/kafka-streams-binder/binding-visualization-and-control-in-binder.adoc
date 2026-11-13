@@ -7,7 +7,8 @@ The lifecycle phases `PAUSED` and `RESUMED` are not available in Kafka Streams b
 
 In order to activate binding visualization and control, the application needs to include the following two dependencies.
 
-```
+[source,xml]
+----
 <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-actuator</artifactId>
@@ -16,19 +17,21 @@ In order to activate binding visualization and control, the application needs to
      <groupId>org.springframework.boot</groupId>
      <artifactId>spring-boot-starter-web</artifactId>
 </dependency>
-```
+----
 
 If you prefer using webflux, you can then include `spring-boot-starter-webflux` instead of the standard web dependency.
 
 In addition, you also need to set the following property:
 
-```
+[source,properties]
+----
 management.endpoints.web.exposure.include=bindings
-```
+----
 
 To illustrate this feature further, let us use the following application as a guide:
 
-```
+[source,java]
+----
 @SpringBootApplication
 public class KafkaStreamsApplication {
 
@@ -47,7 +50,7 @@ public class KafkaStreamsApplication {
 	}
 
 }
-```
+----
 
 As we can see, the application has two Kafka Streams functions - one, a consumer and another a function.
 The consumer binding is named by default as `consumer-in-0`.
@@ -55,7 +58,8 @@ Similarly, for the function, the input binding is `function-in-0` and the output
 
 Once the application is started, we can find details about the bindings using the following bindings endpoint.
 
-```
+[source,bash]
+----
  curl http://localhost:8080/actuator/bindings | jq .
 [
   {
@@ -89,23 +93,25 @@ Once the application is started, we can find details about the bindings using th
     "extendedInfo": {}
   }
 ]
-```
+----
 
 The details about all three bindings can be found above.
 
 Let us now stop the consumer-in-0 binding.
 
-```
+[source,bash]
+----
 curl -d '{"state":"STOPPED"}' -H "Content-Type: application/json" -X POST http://localhost:8080/actuator/bindings/consumer-in-0
-```
+----
 
 At this point, no records will be received through this binding.
 
 Start the binding again.
 
-```
+[source,bash]
+----
 curl -d '{"state":"STARTED"}' -H "Content-Type: application/json" -X POST http://localhost:8080/actuator/bindings/consumer-in-0
-```
+----
 
 When there are multiple bindings present on a single function, invoking these operations on any of those bindings will work.
 This is because all the bindings on a single function are backed by the same `StreamsBuilderFactoryBean`.

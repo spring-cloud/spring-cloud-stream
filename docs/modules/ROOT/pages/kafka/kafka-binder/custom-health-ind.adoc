@@ -12,7 +12,8 @@ The custom implementation must be present in the application configuration as a 
 When the binder discovers the custom implementation, it will use that instead of the default implementation.
 Here is an example of such a custom implementation bean in the application.
 
-```
+[source,java]
+----
 @Bean
 public KafkaBinderHealth kafkaBinderHealthIndicator() {
     return new KafkaBinderHealth() {
@@ -22,7 +23,7 @@ public KafkaBinderHealth kafkaBinderHealthIndicator() {
         }
     };
 }
-```
+----
 
 [[custom-kafka-binder-health-indicator-example]]
 == Custom kafka Binder Health Indicator Example
@@ -33,7 +34,8 @@ In this example, we try to override the binder provided Kafka HealthIndicator by
 
 First, we need create a custom implementation of the `KafkaBinderHealth` interface.
 
-```
+[source,java]
+----
 public class KafkaBinderHealthImplementation implements KafkaBinderHealth {
     @Value("${spring.cloud.bus.destination}")
     private String topic;
@@ -66,11 +68,12 @@ public class KafkaBinderHealthImplementation implements KafkaBinderHealth {
 		// Your implementation
     }
 }
-```
+----
 
 Then we need to create a bean for the custom implementation.
 
-```
+[source,java]
+----
 @Configuration
 public class KafkaBinderHealthIndicatorConfiguration {
 	@Bean
@@ -78,4 +81,4 @@ public class KafkaBinderHealthIndicatorConfiguration {
 		return new KafkaBinderHealthImplementation(admin);
 	}
 }
-```
+----

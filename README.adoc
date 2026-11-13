@@ -122,7 +122,7 @@ build succeed, please raise a ticket to get the settings added to
 source control.
 
 The projects that require middleware (i.e. Redis) for testing generally
-require that a local instance of [Docker](https://www.docker.com/get-started) is installed and running.
+require that a local instance of https://www.docker.com/get-started[Docker] is installed and running.
 
 
 === Documentation
@@ -296,10 +296,11 @@ If you need to suppress some rules (e.g. line length needs to be longer), then i
 
 It's advisable to copy the `${spring-cloud-build.rootFolder}/.editorconfig` and `${spring-cloud-build.rootFolder}/.springformat` to your project. That way, some default formatting rules will be applied. You can do so by running this script:
 
-```bash
+[source,bash]
+----
 $ curl https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/master/.editorconfig -o .editorconfig
 $ touch .springformat
-```
+----
 
 === IDE setup
 

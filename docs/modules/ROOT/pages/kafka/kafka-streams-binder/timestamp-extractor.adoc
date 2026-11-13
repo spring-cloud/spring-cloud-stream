@@ -6,7 +6,8 @@ By default, Kafka Streams extracts the timestamp metadata embedded in the consum
 You can change this default behavior by providing a different `TimestampExtractor` implementation per input binding.
 Here are some details on how that can be done.
 
-```
+[source,java]
+----
 @Bean
 public Function<KStream<Long, Order>,
         Function<KTable<Long, Customer>,
@@ -20,15 +21,16 @@ public Function<KStream<Long, Order>,
 public TimestampExtractor timestampExtractor() {
     return new WallclockTimestampExtractor();
 }
-```
+----
 
 Then you set the above `TimestampExtractor` bean name per consumer binding.
 
-```
+[source,properties]
+----
 spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.timestampExtractorBeanName=timestampExtractor
 spring.cloud.stream.kafka.streams.bindings.process-in-1.consumer.timestampExtractorBeanName=timestampExtractor
-spring.cloud.stream.kafka.streams.bindings.process-in-2.consumer.timestampExtractorBeanName=timestampExtractor"
-```
+spring.cloud.stream.kafka.streams.bindings.process-in-2.consumer.timestampExtractorBeanName=timestampExtractor
+----
 
 If you skip an input consumer binding for setting a custom timestamp extractor, that consumer will use the default settings.
 
