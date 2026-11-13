@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,10 +34,12 @@ import java.util.stream.Collectors;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -47,16 +51,24 @@ import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
+import org.springframework.cloud.stream.binder.kafka.utils.DlqPartitionFunction;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.test.util.TestUtils;
 import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
+import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHeaders;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -65,6 +77,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -339,6 +352,110 @@ class KafkaBinderUnitTests {
 			assertThat(captor.getValue()).containsExactlyInAnyOrderElementsOf(partitions);
 		}
 		messageChannelBinding.unbind();
+	}
+
+	/*
+	 * GH-3121: when the message being sent to the DLQ carries no Acknowledgment header
+	 * (e.g. an ErrorMessage without the original message's headers), sendToDlq must not
+	 * blow up with a NullPointerException while trying to acknowledge in MANUAL /
+	 * MANUAL_IMMEDIATE ack mode.
+	 */
+	@SuppressWarnings("unchecked")
+	@Test
+	void sendToDlqDoesNotThrowWhenAcknowledgmentHeaderIsMissing() throws Exception {
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
+				new KafkaBinderConfigurationProperties(new TestKafkaProperties(), mock(ObjectProvider.class)),
+				mock(KafkaTopicProvisioner.class));
+
+		KafkaTemplate<byte[], byte[]> kafkaTemplate = mock(KafkaTemplate.class);
+		SendResult<byte[], byte[]> sendResult = mock(SendResult.class);
+		given(kafkaTemplate.send(any(org.apache.kafka.clients.producer.ProducerRecord.class))).willReturn(CompletableFuture.completedFuture(sendResult));
+
+		Object dlqSender = newDlqSender(binder, kafkaTemplate, 10_000L);
+
+		ConsumerRecord<Object, Object> consumerRecord = new ConsumerRecord<>("topic", 0, 0L, "key", "value");
+		MessageHeaders headersWithoutAcknowledgment = new MessageHeaders(Collections.emptyMap());
+
+		assertThatCode(() -> invokeSendToDlq(dlqSender, consumerRecord, headersWithoutAcknowledgment,
+				ContainerProperties.AckMode.MANUAL_IMMEDIATE))
+				.doesNotThrowAnyException();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	void sendToDlqStillAcknowledgesWhenAcknowledgmentHeaderIsPresent() throws Exception {
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
+				new KafkaBinderConfigurationProperties(new TestKafkaProperties(), mock(ObjectProvider.class)),
+				mock(KafkaTopicProvisioner.class));
+
+		KafkaTemplate<byte[], byte[]> kafkaTemplate = mock(KafkaTemplate.class);
+		SendResult<byte[], byte[]> sendResult = mock(SendResult.class);
+		given(kafkaTemplate.send(any(org.apache.kafka.clients.producer.ProducerRecord.class))).willReturn(CompletableFuture.completedFuture(sendResult));
+
+		Object dlqSender = newDlqSender(binder, kafkaTemplate, 10_000L);
+
+		ConsumerRecord<Object, Object> consumerRecord = new ConsumerRecord<>("topic", 0, 0L, "key", "value");
+		Acknowledgment acknowledgment = mock(Acknowledgment.class);
+		MessageHeaders headersWithAcknowledgment = new MessageHeaders(
+				Collections.singletonMap(KafkaHeaders.ACKNOWLEDGMENT, acknowledgment));
+
+		invokeSendToDlq(dlqSender, consumerRecord, headersWithAcknowledgment,
+				ContainerProperties.AckMode.MANUAL_IMMEDIATE);
+
+		verify(acknowledgment).acknowledge();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	void sendToDlqDoesNotAcknowledgeWhenAckModeIsNotManual() throws Exception {
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
+				new KafkaBinderConfigurationProperties(new TestKafkaProperties(), mock(ObjectProvider.class)),
+				mock(KafkaTopicProvisioner.class));
+
+		KafkaTemplate<byte[], byte[]> kafkaTemplate = mock(KafkaTemplate.class);
+		SendResult<byte[], byte[]> sendResult = mock(SendResult.class);
+		given(kafkaTemplate.send(any(org.apache.kafka.clients.producer.ProducerRecord.class))).willReturn(CompletableFuture.completedFuture(sendResult));
+
+		Object dlqSender = newDlqSender(binder, kafkaTemplate, 10_000L);
+
+		ConsumerRecord<Object, Object> consumerRecord = new ConsumerRecord<>("topic", 0, 0L, "key", "value");
+		Acknowledgment acknowledgment = mock(Acknowledgment.class);
+		MessageHeaders headersWithAcknowledgment = new MessageHeaders(
+				Collections.singletonMap(KafkaHeaders.ACKNOWLEDGMENT, acknowledgment));
+
+		invokeSendToDlq(dlqSender, consumerRecord, headersWithAcknowledgment, ContainerProperties.AckMode.RECORD);
+
+		verify(acknowledgment, never()).acknowledge();
+	}
+
+	private Object newDlqSender(KafkaMessageChannelBinder binder, KafkaTemplate<?, ?> kafkaTemplate, long timeout)
+			throws Exception {
+
+		Class<?> dlqSenderType = Class.forName(
+				"org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder$DlqSender");
+		Constructor<?> constructor = dlqSenderType
+				.getDeclaredConstructor(KafkaMessageChannelBinder.class, KafkaTemplate.class, long.class);
+		constructor.setAccessible(true);
+		return constructor.newInstance(binder, kafkaTemplate, timeout);
+	}
+
+	private void invokeSendToDlq(Object dlqSender, ConsumerRecord<Object, Object> consumerRecord,
+			MessageHeaders messageHeaders, ContainerProperties.AckMode ackMode) throws Exception {
+
+		Method sendToDlq = dlqSender.getClass().getDeclaredMethod("sendToDlq", ConsumerRecord.class,
+				org.apache.kafka.common.header.Headers.class, String.class, String.class, Throwable.class,
+				DlqPartitionFunction.class, MessageHeaders.class, ContainerProperties.AckMode.class);
+		sendToDlq.setAccessible(true);
+		try {
+			sendToDlq.invoke(dlqSender, consumerRecord, new RecordHeaders(), "dlqTopic", "group",
+					new RuntimeException("boom"), DlqPartitionFunction.ORIGINAL_PARTITION, messageHeaders, ackMode);
+		}
+		catch (java.lang.reflect.InvocationTargetException ex) {
+			if (ex.getCause() instanceof RuntimeException runtimeException) {
+				throw runtimeException;
+			}
+			throw ex;
+		}
 	}
 
 }
