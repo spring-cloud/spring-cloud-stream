@@ -6,7 +6,7 @@ Spring Cloud Stream includes a binder implementation designed explicitly for htt
 With this native integration, a Spring Cloud Stream "processor" application can directly use the
 https://kafka.apache.org/documentation/streams/developer-guide[Apache Kafka Streams] APIs in the core business logic.
 
-Kafka Streams binder implementation builds on the foundations provided by the https://docs.spring.io/spring-kafka/reference/html/#kafka-streams[Spring for Apache Kafka] project.
+Kafka Streams binder implementation builds on the foundations provided by the https://docs.spring.io/spring-kafka/reference/appendix/change-history.html#kafka-streams[Spring for Apache Kafka] project.
 
 Kafka Streams binder provides binding capabilities for the three major types in Kafka Streams - `KStream`, `KTable` and `GlobalKTable`.
 

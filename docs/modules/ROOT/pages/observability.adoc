@@ -3,7 +3,7 @@
 = Observability
 :page-section-summary-toc: 1
 
-Spring provides support for Observability via https://micrometer.io/[Micrometer] which defines an https://micrometer.io/docs/observation[Observation concept that enables both Metrics and Traces] in applications.
+Spring provides support for Observability via https://micrometer.io/[Micrometer] which defines an https://docs.micrometer.io/micrometer/reference/observation.html[Observation concept that enables both Metrics and Traces] in applications.
 
 Spring cloud Stream integrates such support at the level of https://spring.io/projects/spring-cloud-function[Spring Cloud Function] by providing amongst several abstractions an `ObservationFunctionAroundWrapper`, which wraps function to handle observations out of the box.
 
@@ -75,7 +75,7 @@ public class DemoStreamApplication {
 }
 ----
 
-The above example emulates attaching an https://projectreactor.io/docs/core/release/reference/#_observation[Observation] to a single message processing (i.e., imperative function), since in this case the unit of observation begins with `Mono.just(..)` and the last operation attaches the `ObservationRegistry` to the subscriber.
+The above example emulates attaching an https://projectreactor.io/docs/core/release/reference/metrics.html#observation[Observation] to a single message processing (i.e., imperative function), since in this case the unit of observation begins with `Mono.just(..)` and the last operation attaches the `ObservationRegistry` to the subscriber.
 
 If there is an observation already attached to the subscriber, it will be used to create a child Observation for the chain/segment upstream of `tap`, however as we already stated, by default, the framework does not attach any Observation to the stream chains you return.
 
