@@ -2,7 +2,7 @@
 
 This section contains the configuration options used by the Apache Kafka binder.
 
-For common configuration options and properties pertaining to the binder, see the https://docs.spring.io/spring-cloud-stream/docs/current/reference/html/spring-cloud-stream.html#binding-properties[binding properties] in core documentation.
+For common configuration options and properties pertaining to the binder, see the xref:spring-cloud-stream/binding-properties.adoc[binding properties] in core documentation.
 
 [[kafka-binder-properties]]
 == Kafka Binder Properties
@@ -81,7 +81,7 @@ If the partition count of the target topic is smaller than the expected value, t
 +
 Default: `false`.
 spring.cloud.stream.kafka.binder.transaction.transactionIdPrefix::
-Enables transactions in the binder. See `transaction.id` in the Kafka documentation and https://docs.spring.io/spring-kafka/reference/html/#transactions[Transactions] in the `spring-kafka` documentation.
+Enables transactions in the binder. See `transaction.id` in the Kafka documentation and https://docs.spring.io/spring-kafka/reference/kafka/transactions.html[Transactions] in the `spring-kafka` documentation.
 When transactions are enabled, individual `producer` properties are ignored and all producers use the `spring.cloud.stream.kafka.binder.transaction.producer.*` properties.
 +
 Default `null` (no transactions)

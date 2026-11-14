@@ -37,7 +37,7 @@ Default: `false`.
 batchingEnabled::
 Whether to enable message batching by producers.
 Messages are batched into one message according to the following properties (described in the next three entries in this list): 'batchSize', `batchBufferLimit`, and `batchTimeout`.
-See https://docs.spring.io/spring-amqp//reference/html/_reference.html#template-batching[Batching] for more information.
+See https://docs.spring.io/spring-amqp/reference/amqp/sending-messages.html#template-batching[Batching] for more information.
 Also see xref:rabbit/rabbit_overview/receiving-batch.adoc[Receiving Batched Messages].
 +
 Default: `false`.
