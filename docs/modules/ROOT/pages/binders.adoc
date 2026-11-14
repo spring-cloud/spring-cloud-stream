@@ -5,11 +5,11 @@
 
 The following binder implementations are available:
 
-* https://cloud.spring.io/spring-cloud-stream-binder-rabbit/[RabbitMQ]
-* https://cloud.spring.io/spring-cloud-stream-binder-kafka/[Apache Kafka]
+* xref:rabbit/rabbit_overview.adoc[RabbitMQ]
+* xref:kafka/kafka_overview.adoc[Apache Kafka]
 * https://github.com/spring-cloud/spring-cloud-stream-binder-aws-kinesis[Amazon Kinesis]
 * https://github.com/spring-cloud/spring-cloud-gcp/tree/master/spring-cloud-gcp-pubsub-stream-binder[Google PubSub _(partner maintained)_]
 * https://github.com/SolaceProducts/solace-spring-cloud/tree/master/solace-spring-cloud-starters/solace-spring-cloud-stream-starter#spring-cloud-stream-binder-for-solace-pubsub[Solace PubSub+ _(partner maintained)_]
-* https://aka.ms/spring/docs#spring-cloud-stream-binder-for-azure-event-hubs[Azure Event Hubs _(partner maintained)_]
-* https://aka.ms/spring/docs#spring-cloud-stream-binder-for-azure-service-bus[Azure Service Bus Binder _(partner maintained)_]
+* https://learn.microsoft.com/en-us/azure/developer/java/spring-framework/configure-spring-cloud-stream-binder-java-app-azure-event-hub[Azure Event Hubs _(partner maintained)_]
+* https://learn.microsoft.com/en-us/azure/developer/java/spring-framework/configure-spring-cloud-stream-binder-java-app-with-service-bus[Azure Service Bus Binder _(partner maintained)_]
 * https://github.com/alibaba/spring-cloud-alibaba/wiki/RocketMQ-en[Apache RocketMQ _(partner maintained)_]

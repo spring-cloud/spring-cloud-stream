@@ -24,4 +24,4 @@ class NoOpBindingMeters {
 }
 ```
 
-More details on how to suppress meters selectively can be found https://micrometer.io/docs/concepts#_meter_filters[here].
+More details on how to suppress meters selectively can be found https://docs.micrometer.io/micrometer/reference/concepts/meter-filters.html[here].

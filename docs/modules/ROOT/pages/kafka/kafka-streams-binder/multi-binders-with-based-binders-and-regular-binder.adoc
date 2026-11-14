@@ -31,7 +31,7 @@ spring.cloud.stream.bindings.kstreamProcess-out-0.destination=foobar
 ```
 
 Things become a bit more complex if you have the same application as above, but is dealing with two different Kafka clusters, for e.g. the regular `process` is acting upon both Kafka cluster 1 and cluster 2 (receiving data from cluster-1 and sending to cluster-2) and the Kafka Streams processor is acting upon Kafka cluster 2.
-Then you have to use the https://cloud.spring.io/spring-cloud-stream/reference/html/spring-cloud-stream.html#multiple-binders[multi binder] facilities provided by Spring Cloud Stream.
+Then you have to use the xref:spring-cloud-stream/multiple-binders.adoc[multi binder] facilities provided by Spring Cloud Stream.
 
 Here is how your configuration may change in that scenario.
 

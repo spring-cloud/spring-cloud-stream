@@ -42,7 +42,7 @@ Also, 0.11.x.x does not support the `autoAddPartitions` property.
 
 This section contains the configuration options used by the Apache Kafka binder.
 
-For common configuration options and properties pertaining to the binder, see the https://cloud.spring.io/spring-cloud-static/spring-cloud-stream/current/reference/html/spring-cloud-stream.html#binding-properties[binding properties] in core documentation.
+For common configuration options and properties pertaining to the binder, see the xref:spring-cloud-stream/binding-properties.adoc[binding properties] in core documentation.
 
 [[kafka-binder-properties]]
 ==== Kafka Binder Properties
@@ -384,7 +384,7 @@ Keep in mind that, when using DLQ on a consumer binding that is in batch mode, a
 IMPORTANT: Retry within the binder is not supported when using batch mode, so `maxAttempts` will be overridden to 1.
 You can configure a `DefaultErrorHandler` (using a `ListenerContainerCustomizer`) to achieve similar functionality to retry in the binder.
 You can also use a manual `AckMode` and call `Ackowledgment.nack(index, sleep)` to commit the offsets for a partial batch and have the remaining records redelivered.
-Refer to the https://docs.spring.io/spring-kafka/docs/current/reference/kafka/receiving-messages/message-listener-container.html#committing-offsets[Spring for Apache Kafka documentation] for more information about these techniques.
+Refer to the https://docs.spring.io/spring-kafka/reference/kafka/receiving-messages/message-listener-container.html#committing-offsets[Spring for Apache Kafka documentation] for more information about these techniques.
 
 [[kafka-producer-properties]]
 ==== Kafka Producer Properties
@@ -736,7 +736,7 @@ IMPORTANT: If you deploy multiple instances of your application, each instance n
 === Error Channels
 
 Starting with version 1.3, the binder unconditionally sends exceptions to an error channel for each consumer destination and can also be configured to send async producer send failures to an error channel.
-See https://cloud.spring.io/spring-cloud-static/spring-cloud-stream/current/reference/html/spring-cloud-stream.html#spring-cloud-stream-overview-error-handling[this section on error handling] for more information.
+See xref:spring-cloud-stream/overview-error-handling.adoc[this section on error handling] for more information.
 
 The payload of the `ErrorMessage` for a send failure is a `KafkaSendFailureException` with properties:
 
@@ -772,7 +772,7 @@ class NoOpBindingMeters {
 }
 ```
 
-More details on how to suppress meters selectively can be found https://micrometer.io/docs/concepts#_meter_filters[here].
+More details on how to suppress meters selectively can be found https://docs.micrometer.io/micrometer/reference/concepts/meter-filters.html[here].
 
 [[kafka-tombstones]]
 === Tombstone Records (null record values)
@@ -1024,7 +1024,7 @@ public class KafkaBinderHealthImplementation implements KafkaBinderHealth {
 
     public KafkaBinderHealthImplementation(final KafkaAdmin admin) {
 		// More about configuring Kafka
-		// https://docs.spring.io/spring-kafka/reference/html/#configuring-topics
+		// https://docs.spring.io/spring-kafka/reference/kafka/configuring-topics.html
         this.client = AdminClient.create(admin.getConfigurationProperties());
     }
 
