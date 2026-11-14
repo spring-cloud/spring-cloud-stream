@@ -45,7 +45,7 @@ Example: `${spring.application.name}-${spring.cloud.stream.bindings.input.group}
 Default: none - the broker will generate random consumer tags.
 containerType::
 Select the type of listener container to be used.
-See https://docs.spring.io/spring-amqp/reference/html/_reference.html#choose-container[Choosing a Container] in the Spring AMQP documentation for more information.
+See https://docs.spring.io/spring-amqp/reference/amqp/receiving-messages/choose-container.htmlner.html[Choosing a Container] in the Spring AMQP documentation for more information.
 Also see <<rabbitmq-stream>>.
 +
 Default: `simple`
@@ -274,7 +274,7 @@ Default: `DeliveryMode.PERSISTENT`
 republishToDlq::
 By default, messages that fail after retries are exhausted and rejected.
 If a dead-letter queue (DLQ) is configured the binder republishes failed messages to the dead-letter queue.
-When this property is set to `true` (the default), the binder will add additional headers to the failed message, 
+When this property is set to `true` (the default), the binder will add additional headers to the failed message,
 including the exception message and stack trace from the cause of the final failure.
 When `false`, messages will be routed to the DLQ in its original form without extra headers.
 Also see the xref:rabbit/rabbit_overview/rabbitmq-consumer-properties.adoc#spring-cloud-stream-rabbit-frame-max-headroom[frameMaxHeadroom property].

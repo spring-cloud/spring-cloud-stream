@@ -201,7 +201,7 @@ TIP: Any configured custom schema mappings will be consulted when the `schema-ty
 Each message typically has header information that needs to be carried along as the message traverses between Pulsar and Spring Messaging via Spring Cloud Stream input and output bindings.
 To support this traversal, the framework handles the necessary message header conversion.
 
-https://docs.spring.io/spring-pulsar/docs/current-SNAPSHOT/reference/html/#_pulsar_headers[Pulsar Headers]
+https://docs.spring.io/spring-pulsar/docs/1.0.3/reference/reference/pulsar.html#pulsar-headers[Pulsar Headers]
 
 [[custom-header-mapper]]
 ==== Custom Header Mapper

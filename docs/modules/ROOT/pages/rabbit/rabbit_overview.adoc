@@ -82,5 +82,5 @@ NOTE: Currently, a `multiplex` consumer (a single consumer listening to multiple
 
 This section contains settings specific to the RabbitMQ Binder and bound channels.
 
-For general binding configuration options and properties, see the https://cloud.spring.io/spring-cloud-static/spring-cloud-stream/current/reference/html/spring-cloud-stream.html#_configuration_options[Spring Cloud Stream core documentation].
+For general binding configuration options and properties, see the xref:spring-cloud-stream/configuration-options.adoc[Spring Cloud Stream core documentation].
 

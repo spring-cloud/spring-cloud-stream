@@ -12,7 +12,7 @@ The health indicator requires the dependency `spring-boot-starter-actuator`. For
 
 Spring Cloud Stream Kafka Streams Binder provides a health indicator to check the state of the underlying streams threads.
 Spring Cloud Stream defines a property `management.health.binders.enabled` to enable the health indicator. See the
-https://docs.spring.io/spring-cloud-stream/docs/current/reference/htmlsingle/#_health_indicator[Spring Cloud Stream documentation].
+xref:spring-cloud-stream/health-indicator.adoc[Spring Cloud Stream documentation].
 
 The health indicator provides the following details for each stream thread's metadata:
 
