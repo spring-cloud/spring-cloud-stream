@@ -34,7 +34,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
@@ -183,7 +185,8 @@ public class KafkaMessageChannelBinder extends
 		AbstractMessageChannelBinder<ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>, KafkaTopicProvisioner>
 		// @checkstyle:on
 		implements
-		ExtendedPropertiesBinder<MessageChannel, KafkaConsumerProperties, KafkaProducerProperties> {
+		ExtendedPropertiesBinder<MessageChannel, KafkaConsumerProperties, KafkaProducerProperties>,
+		DisposableBean {
 
 	/**
 	 * Kafka header for x-exception-fqcn.
@@ -244,6 +247,8 @@ public class KafkaMessageChannelBinder extends
 	private DlqDestinationResolver dlqDestinationResolver;
 
 	private final Map<ConsumerDestination, ContainerProperties.AckMode> ackModeInfo = new ConcurrentHashMap<>();
+
+	private final Map<ConsumerDestination, List<DlqErrorMessageHandler>> dlqErrorMessageHandlers = new ConcurrentHashMap<>();
 
 	private ProducerListener<byte[], byte[]> producerListener;
 
@@ -1263,23 +1268,54 @@ public class KafkaMessageChannelBinder extends
 			@SuppressWarnings("rawtypes")
 			DlqSender<?, ?> dlqSender = new DlqSender(kafkaTemplate, sendTimeout);
 
-			return (message) -> {
-				List<ConsumerRecord<Object, Object>> records;
-				if (!properties.isBatchMode()) {
-					ConsumerRecord<Object, Object> record = StaticMessageHeaderAccessor.getSourceData(message);
-					records = List.of(Objects.requireNonNull(record));
-				}
-				else {
-					records = StaticMessageHeaderAccessor.getSourceData(message);
-				}
-				if (!CollectionUtils.isEmpty(records)) {
-					records.forEach(record ->
-						handleRecordForDlq(record, destination, group, properties, kafkaConsumerProperties,
-							dlqProducerProperties, transMan, dlqSender, message));
-				}
-			};
+			DlqErrorMessageHandler errorMessageHandler = new DlqErrorMessageHandler(
+					destination, transMan == null ? producerFactory : null,
+					(message) -> {
+						List<ConsumerRecord<Object, Object>> records;
+						if (!properties.isBatchMode()) {
+							ConsumerRecord<Object, Object> record = StaticMessageHeaderAccessor.getSourceData(message);
+							records = List.of(Objects.requireNonNull(record));
+						}
+						else {
+							records = StaticMessageHeaderAccessor.getSourceData(message);
+						}
+						if (!CollectionUtils.isEmpty(records)) {
+							records.forEach(record ->
+								handleRecordForDlq(record, destination, group, properties, kafkaConsumerProperties,
+									dlqProducerProperties, transMan, dlqSender, message));
+						}
+					});
+			if (transMan == null && destination != null) {
+				this.dlqErrorMessageHandlers
+						.computeIfAbsent(destination, key -> new CopyOnWriteArrayList<>())
+						.add(errorMessageHandler);
+			}
+			return errorMessageHandler;
 		}
 		return null;
+	}
+
+	@Override
+	protected void afterUnbindConsumer(ConsumerDestination destination, String group,
+			ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties) {
+		destroyDlqErrorMessageHandlers(destination);
+	}
+
+	@Override
+	public void destroy() {
+		for (ConsumerDestination destination : new ArrayList<>(this.dlqErrorMessageHandlers.keySet())) {
+			destroyDlqErrorMessageHandlers(destination);
+		}
+	}
+
+	private void destroyDlqErrorMessageHandlers(ConsumerDestination destination) {
+		if (destination == null) {
+			return;
+		}
+		List<DlqErrorMessageHandler> handlers = this.dlqErrorMessageHandlers.remove(destination);
+		if (handlers != null) {
+			handlers.forEach(DlqErrorMessageHandler::destroy);
+		}
 	}
 
 	private void handleRecordForDlq(ConsumerRecord<Object, Object> record, ConsumerDestination destination, String group,
@@ -1775,4 +1811,56 @@ public class KafkaMessageChannelBinder extends
 			}
 		}
 	}
+
+	private final class DlqErrorMessageHandler implements MessageHandler, DisposableBean {
+
+		private final ConsumerDestination destination;
+
+		@Nullable
+		private final ProducerFactory<?, ?> ownedProducerFactory;
+
+		private final MessageHandler delegate;
+
+		private final AtomicBoolean destroyed = new AtomicBoolean();
+
+		private DlqErrorMessageHandler(ConsumerDestination destination,
+				@Nullable ProducerFactory<?, ?> ownedProducerFactory,
+				MessageHandler delegate) {
+			this.destination = destination;
+			this.ownedProducerFactory = ownedProducerFactory;
+			this.delegate = delegate;
+		}
+
+		@Override
+		public void handleMessage(Message<?> message) {
+			this.delegate.handleMessage(message);
+		}
+
+		@Override
+		public void destroy() {
+			if (this.destroyed.compareAndSet(false, true)) {
+				if (this.destination != null) {
+					List<DlqErrorMessageHandler> handlers = KafkaMessageChannelBinder.this.dlqErrorMessageHandlers
+							.get(this.destination);
+					if (handlers != null) {
+						handlers.remove(this);
+						if (handlers.isEmpty()) {
+							KafkaMessageChannelBinder.this.dlqErrorMessageHandlers.remove(this.destination, handlers);
+						}
+					}
+				}
+				if (this.ownedProducerFactory instanceof DisposableBean disposableProducerFactory) {
+					try {
+						disposableProducerFactory.destroy();
+					}
+					catch (Exception ex) {
+						KafkaMessageChannelBinder.this.logger.error(
+								"Error destroying the DLQ producer factory bean: ", ex);
+					}
+				}
+			}
+		}
+
+	}
+
 }
