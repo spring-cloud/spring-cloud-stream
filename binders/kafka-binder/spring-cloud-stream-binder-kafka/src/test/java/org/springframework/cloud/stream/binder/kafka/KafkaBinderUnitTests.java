@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import org.apache.kafka.clients.consumer.Consumer;
@@ -43,9 +44,13 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.DefaultPollableMessageSource;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
+import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
+import org.springframework.cloud.stream.binder.PollableSource;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
@@ -53,8 +58,12 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.test.util.TestUtils;
 import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
+import org.springframework.kafka.transaction.KafkaAwareTransactionManager;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.converter.StringMessageConverter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -65,6 +74,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -339,6 +351,189 @@ class KafkaBinderUnitTests {
 			assertThat(captor.getValue()).containsExactlyInAnyOrderElementsOf(partitions);
 		}
 		messageChannelBinding.unbind();
+	}
+
+	@Test
+	void dlqProducerFactoryDestroyedOnConsumerUnbind() throws Exception {
+		AtomicReference<DefaultKafkaProducerFactory<byte[], byte[]>> capturedFactory = new AtomicReference<>();
+		GenericApplicationContext context = new GenericApplicationContext();
+		context.refresh();
+		KafkaMessageChannelBinder binder = createDlqUnitTestBinder("dlq-unbind-topic", "dlq-unbind-group",
+				capturedFactory, context);
+
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = dlqConsumerProperties();
+		Binding<MessageChannel> binding = binder.bindConsumer("dlq-unbind-topic", "dlq-unbind-group",
+				new DirectChannel(), consumerProperties);
+
+		DefaultKafkaProducerFactory<byte[], byte[]> dlqProducerFactory = capturedFactory.get();
+		assertThat(dlqProducerFactory).isNotNull();
+		verify(dlqProducerFactory, never()).destroy();
+
+		binding.unbind();
+		verify(dlqProducerFactory, times(1)).destroy();
+
+		// Closing the binder afterwards must not destroy the same factory twice
+		binder.destroy();
+		verify(dlqProducerFactory, times(1)).destroy();
+		context.close();
+	}
+
+	@Test
+	void dlqProducerFactoryDestroyedOnBinderDestroyWithoutUnbind() throws Exception {
+		AtomicReference<DefaultKafkaProducerFactory<byte[], byte[]>> capturedFactory = new AtomicReference<>();
+		GenericApplicationContext context = new GenericApplicationContext();
+		context.refresh();
+		KafkaMessageChannelBinder binder = createDlqUnitTestBinder("dlq-destroy-topic", "dlq-destroy-group",
+				capturedFactory, context);
+
+		ConsumerDestination destination = mock(ConsumerDestination.class);
+		given(destination.getName()).willReturn("dlq-destroy-topic");
+		MessageHandler errorHandler = binder.getErrorMessageHandler(destination, "dlq-destroy-group",
+				dlqConsumerProperties());
+		assertThat(errorHandler).isNotNull();
+
+		DefaultKafkaProducerFactory<byte[], byte[]> dlqProducerFactory = capturedFactory.get();
+		assertThat(dlqProducerFactory).isNotNull();
+		verify(dlqProducerFactory, never()).destroy();
+
+		binder.destroy();
+		verify(dlqProducerFactory, times(1)).destroy();
+		context.close();
+	}
+
+	@Test
+	void dlqProducerFactoryDestroyedOnUnbindWhenErrorHandlerNotRegisteredAsBean() throws Exception {
+		AtomicReference<DefaultKafkaProducerFactory<byte[], byte[]>> capturedFactory = new AtomicReference<>();
+		GenericApplicationContext context = new GenericApplicationContext();
+		String preRegisteredErrorHandlerBean = "dlq-user-handler-topic.dlq-user-handler-group.errors.handler";
+		context.registerBean(preRegisteredErrorHandlerBean, MessageHandler.class, () -> message -> {
+		});
+		context.refresh();
+		KafkaMessageChannelBinder binder = createDlqUnitTestBinder("dlq-user-handler-topic", "dlq-user-handler-group",
+				capturedFactory, context);
+
+		Binding<MessageChannel> binding = binder.bindConsumer("dlq-user-handler-topic", "dlq-user-handler-group",
+				new DirectChannel(), dlqConsumerProperties());
+
+		DefaultKafkaProducerFactory<byte[], byte[]> dlqProducerFactory = capturedFactory.get();
+		assertThat(dlqProducerFactory).isNotNull();
+		verify(dlqProducerFactory, never()).destroy();
+
+		binding.unbind();
+		verify(dlqProducerFactory, times(1)).destroy();
+		context.close();
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	void dlqProducerFactoryNotDestroyedWhenProvidedByTransactionManager() throws Exception {
+		AtomicReference<DefaultKafkaProducerFactory<byte[], byte[]>> capturedFactory = new AtomicReference<>();
+		GenericApplicationContext context = new GenericApplicationContext();
+		DefaultKafkaProducerFactory<byte[], byte[]> txProducerFactory = spy(
+				new DefaultKafkaProducerFactory<>(Collections.emptyMap()));
+		KafkaAwareTransactionManager<byte[], byte[]> txManager = mock(KafkaAwareTransactionManager.class);
+		given(txManager.getProducerFactory()).willReturn(txProducerFactory);
+		context.registerBean("customTxManager", KafkaAwareTransactionManager.class, () -> txManager);
+		context.refresh();
+
+		KafkaMessageChannelBinder binder = createDlqUnitTestBinder("dlq-tx-topic", "dlq-tx-group",
+				capturedFactory, context);
+
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = dlqConsumerProperties();
+		consumerProperties.getExtension().setTransactionManager("customTxManager");
+		Binding<MessageChannel> binding = binder.bindConsumer("dlq-tx-topic", "dlq-tx-group",
+				new DirectChannel(), consumerProperties);
+
+		assertThat(capturedFactory.get()).isNull();
+		binding.unbind();
+		binder.destroy();
+		verify(txProducerFactory, never()).destroy();
+		context.close();
+	}
+
+	@Test
+	void dlqProducerFactoryDestroyedForPolledConsumerOnUnbind() throws Exception {
+		AtomicReference<DefaultKafkaProducerFactory<byte[], byte[]>> capturedFactory = new AtomicReference<>();
+		GenericApplicationContext context = new GenericApplicationContext();
+		context.refresh();
+		KafkaMessageChannelBinder binder = createDlqUnitTestBinder("dlq-polled-topic", "dlq-polled-group",
+				capturedFactory, context);
+
+		DefaultPollableMessageSource source = new DefaultPollableMessageSource(new StringMessageConverter());
+		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer("dlq-polled-topic",
+				"dlq-polled-group", source, dlqConsumerProperties());
+
+		DefaultKafkaProducerFactory<byte[], byte[]> dlqProducerFactory = capturedFactory.get();
+		assertThat(dlqProducerFactory).isNotNull();
+		verify(dlqProducerFactory, never()).destroy();
+
+		binding.unbind();
+		verify(dlqProducerFactory, times(1)).destroy();
+		context.close();
+	}
+
+	private ExtendedConsumerProperties<KafkaConsumerProperties> dlqConsumerProperties() {
+		KafkaConsumerProperties extension = new KafkaConsumerProperties();
+		extension.setEnableDlq(true);
+		extension.setAutoRebalanceEnabled(false);
+		ExtendedConsumerProperties<KafkaConsumerProperties> properties = new ExtendedConsumerProperties<>(extension);
+		properties.setInstanceCount(1);
+		return properties;
+	}
+
+	@SuppressWarnings("unchecked")
+	private KafkaMessageChannelBinder createDlqUnitTestBinder(String topic, String group,
+			AtomicReference<DefaultKafkaProducerFactory<byte[], byte[]>> capturedFactory,
+			GenericApplicationContext context) throws Exception {
+		KafkaBinderConfigurationProperties configurationProperties = new KafkaBinderConfigurationProperties(
+				new TestKafkaProperties(), mock(ObjectProvider.class));
+		KafkaTopicProvisioner provisioningProvider = mock(KafkaTopicProvisioner.class);
+		ConsumerDestination dest = mock(ConsumerDestination.class);
+		given(dest.getName()).willReturn(topic);
+		given(provisioningProvider.provisionConsumerDestination(anyString(), anyString(), any())).willReturn(dest);
+		List<PartitionInfo> partitionInfos = List.of(new PartitionInfo(topic, 0, null, null, null));
+		given(provisioningProvider.getListenedPartitions(anyString(), any(), any(), anyInt(), anyBoolean(),
+				anyBoolean(), anyString(), any())).willReturn(partitionInfos);
+		given(provisioningProvider.getPartitionInfoForConsumer(anyString(), any(), any(), anyInt()))
+				.willReturn(partitionInfos);
+
+		Consumer<byte[], byte[]> consumer = mock(Consumer.class);
+		willAnswer(i -> new ConsumerRecords<>(Collections.emptyMap())).given(consumer).poll(any(Duration.class));
+
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(configurationProperties, provisioningProvider,
+				(container, destinationName, grp) -> container.getContainerProperties().setMissingTopicsFatal(false),
+				null) {
+
+			@Override
+			protected DefaultKafkaProducerFactory<byte[], byte[]> getProducerFactory(String transactionIdPrefix,
+					ExtendedProducerProperties<KafkaProducerProperties> producerProperties, String beanName,
+					String destination) {
+				DefaultKafkaProducerFactory<byte[], byte[]> factory = spy(
+						super.getProducerFactory(transactionIdPrefix, producerProperties, beanName, destination));
+				capturedFactory.set(factory);
+				return factory;
+			}
+
+			@Override
+			protected ConsumerFactory<?, ?> createKafkaConsumerFactory(boolean anonymous, String consumerGroup,
+					ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties, String beanName,
+					String destination) {
+				ConsumerFactory<byte[], byte[]> consumerFactory = mock(ConsumerFactory.class);
+				given(consumerFactory.createConsumer(any(), any(), any(), any())).willReturn(consumer);
+				given(consumerFactory.createConsumer(any(), any(), any())).willReturn(consumer);
+				given(consumerFactory.createConsumer(any(), any())).willReturn(consumer);
+				given(consumerFactory.createConsumer(any())).willReturn(consumer);
+				given(consumerFactory.createConsumer()).willReturn(consumer);
+				given(consumerFactory.getConfigurationProperties()).willReturn(Map.of(
+						ConsumerConfig.GROUP_ID_CONFIG, group,
+						ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 1));
+				return consumerFactory;
+			}
+
+		};
+		binder.setApplicationContext(context);
+		binder.afterPropertiesSet();
+		return binder;
 	}
 
 }
