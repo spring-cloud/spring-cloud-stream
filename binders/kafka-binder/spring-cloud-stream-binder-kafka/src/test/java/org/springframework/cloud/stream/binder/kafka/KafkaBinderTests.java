@@ -4124,6 +4124,55 @@ class KafkaBinderTests extends
 		verify(kafkaPartitionHandlerSpy, times(2)).determinePartition(ArgumentMatchers.any());
 	}
 
+	@Test
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	void dlqProducerNetworkThreadStoppedOnConsumerUnbind() throws Exception {
+		Binder binder = getBinder();
+		String topic = "dlq-thread-close-" + UUID.randomUUID();
+		String dlqClientId = "dlq-close-client-" + UUID.randomUUID();
+
+		BindingProperties outputBindingProperties = createProducerBindingProperties(createProducerProperties());
+		DirectChannel moduleOutputChannel = createBindableChannel("output", outputBindingProperties);
+
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.setMaxAttempts(1);
+		consumerProperties.getExtension().setEnableDlq(true);
+		consumerProperties.getExtension().getDlqProducerProperties().getConfiguration()
+			.put(ProducerConfig.CLIENT_ID_CONFIG, dlqClientId);
+
+		DirectChannel moduleInputChannel = createBindableChannel("input",
+			createConsumerBindingProperties(consumerProperties));
+
+		Binding<MessageChannel> producerBinding = binder.bindProducer(topic, moduleOutputChannel,
+			outputBindingProperties.getProducer());
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer(topic, "dlqThreadCloseGroup",
+			moduleInputChannel, consumerProperties);
+
+		binderBindUnbindLatency();
+
+		FailingInvocationCountingMessageHandler handler = new FailingInvocationCountingMessageHandler();
+		moduleInputChannel.subscribe(handler);
+
+		moduleOutputChannel.send(MessageBuilder.withPayload("fail".getBytes(StandardCharsets.UTF_8)).build());
+		assertThat(handler.getLatch().await(30, TimeUnit.SECONDS)).isTrue();
+
+		Awaitility.await().atMost(Duration.ofSeconds(15)).untilAsserted(() ->
+			assertThat(Thread.getAllStackTraces().keySet().stream()
+				.filter(Thread::isAlive)
+				.map(Thread::getName))
+				.anyMatch(name -> name.contains(dlqClientId)));
+
+		consumerBinding.unbind();
+
+		Awaitility.await().atMost(Duration.ofSeconds(15)).untilAsserted(() ->
+			assertThat(Thread.getAllStackTraces().keySet().stream()
+				.filter(Thread::isAlive)
+				.map(Thread::getName))
+				.noneMatch(name -> name.contains(dlqClientId)));
+
+		producerBinding.unbind();
+	}
+
 	private void setupBindingAndAssert(String bindingName, AbstractKafkaTestBinder binder) throws Exception {
 		ConfigurableApplicationContext applicationContext = (ConfigurableApplicationContext) binder.getApplicationContext();
 		TestObservationRegistry observationRegistry = TestObservationRegistry.create();
