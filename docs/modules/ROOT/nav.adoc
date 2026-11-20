@@ -65,17 +65,6 @@
 **** xref:kafka/kafka-binder/dlq.adoc[]
 **** xref:kafka/kafka-binder/dlq-partition.adoc[]
 **** xref:kafka/kafka-binder/partitions.adoc[]
-*** Reactive Kafka Binder
-**** xref:kafka/kafka-reactive-binder/overview.adoc[]
-**** xref:kafka/kafka-reactive-binder/usage.adoc[]
-**** xref:kafka/kafka-reactive-binder/examples.adoc[]
-**** xref:kafka/kafka-reactive-binder/consuming.adoc[]
-**** xref:kafka/kafka-reactive-binder/concurrency.adoc[]
-**** xref:kafka/kafka-reactive-binder/multiplex.adoc[]
-**** xref:kafka/kafka-reactive-binder/pattern.adoc[]
-**** xref:kafka/kafka-reactive-binder/sender_result.adoc[]
-**** xref:kafka/kafka-reactive-binder/health_indicator.adoc[]
-**** xref:kafka/kafka-reactive-binder/reactive_observability.adoc[]
 *** Kafka Stream Binder
 **** xref:kafka/kafka-streams-binder/usage.adoc[]
 **** xref:kafka/kafka-streams-binder/overview.adoc[]
