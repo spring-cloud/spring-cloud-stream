@@ -16,11 +16,21 @@
 
 package org.springframework.cloud.stream.binding;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 
@@ -30,6 +40,7 @@ import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.MessageChannel;
 
@@ -77,6 +88,65 @@ class BindingServiceTests {
 		inOrder.verify(mockBinding).stop();
 		inOrder.verify(mockBinding).unbind();
 		assertThat(service.getConsumerBindings(inputChannelName)).isEmpty();
+	}
+
+	@Test
+	@Timeout(60)
+	void concurrentFirstUseOfBindingsSharesSingleInstancePerName() throws Exception {
+		List<String> names = new ArrayList<>();
+		for (int i = 0; i < 200; i++) {
+			names.add("binding-" + i);
+		}
+		int threads = 8;
+		ExecutorService executor = Executors.newFixedThreadPool(threads);
+		try {
+			for (int round = 0; round < 5; round++) {
+				GenericApplicationContext context = new GenericApplicationContext();
+				context.refresh();
+				BindingServiceProperties properties = new BindingServiceProperties();
+				properties.setApplicationContext(context);
+
+				CountDownLatch start = new CountDownLatch(1);
+				List<Future<Map<String, BindingProperties>>> futures = new ArrayList<>();
+				for (int thread = 0; thread < threads; thread++) {
+					List<String> shuffled = new ArrayList<>(names);
+					Collections.shuffle(shuffled, new Random(thread));
+					futures.add(executor.submit(() -> {
+						start.await();
+						Map<String, BindingProperties> seen = new HashMap<>();
+						shuffled.forEach(name -> seen.put(name, properties.getBindingProperties(name)));
+						return seen;
+					}));
+				}
+				start.countDown();
+
+				assertThat(properties.getBindings()).isNotNull();
+				for (Future<Map<String, BindingProperties>> future : futures) {
+					Map<String, BindingProperties> seen = future.get(30, TimeUnit.SECONDS);
+					for (String name : names) {
+						// every thread must observe the instance that is actually registered,
+						// otherwise its mutations (destination, consumer, producer) are lost
+						assertThat(seen.get(name)).isSameAs(properties.getBindings().get(name));
+					}
+				}
+				assertThat(properties.getBindings().keySet()).containsExactlyInAnyOrderElementsOf(names);
+			}
+		}
+		finally {
+			executor.shutdownNow();
+		}
+	}
+
+	@Test
+	void bindingsLookupIsCaseInsensitive() {
+		GenericApplicationContext context = new GenericApplicationContext();
+		context.refresh();
+		BindingServiceProperties properties = new BindingServiceProperties();
+		properties.setApplicationContext(context);
+
+		BindingProperties lower = properties.getBindingProperties("myBinding");
+		assertThat(properties.getBindingProperties("MYBINDING")).isSameAs(lower);
+		assertThat(properties.getBindings()).hasSize(1);
 	}
 
 }

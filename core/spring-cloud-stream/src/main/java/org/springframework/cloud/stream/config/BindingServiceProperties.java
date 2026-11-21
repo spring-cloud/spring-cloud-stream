@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -106,7 +106,9 @@ public class BindingServiceProperties
 	 * For example; This sets the content-type for the 'input' binding of a Sink
 	 * application: 'spring.cloud.stream.bindings.input.contentType=text/plain'
 	 */
-	private Map<String, BindingProperties> bindings = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+	// Case-insensitive (GH-3158) and thread-safe: getBindingProperties() and friends add
+	// missing bindings on first use and are called concurrently (e.g., by StreamBridge).
+	private Map<String, BindingProperties> bindings = new ConcurrentSkipListMap<>(String.CASE_INSENSITIVE_ORDER);
 
 	/**
 	 * Additional per-binder properties (see {@link BinderProperties}) if more then one
@@ -273,8 +275,7 @@ public class BindingServiceProperties
 	}
 
 	public BindingProperties getBindingProperties(String bindingName) {
-		this.bindIfNecessary(bindingName);
-		BindingProperties bindingProperties = this.bindings.get(bindingName);
+		BindingProperties bindingProperties = this.bindIfNecessary(bindingName);
 		if (bindingProperties.getDestination() == null) {
 			bindingProperties.setDestination(bindingName);
 		}
@@ -299,8 +300,9 @@ public class BindingServiceProperties
 
 	public void updateProducerProperties(String bindingName,
 			ProducerProperties producerProperties) {
-		if (this.bindings.containsKey(bindingName)) {
-			this.bindings.get(bindingName).setProducer(producerProperties);
+		BindingProperties bindingProperties = this.bindings.get(bindingName);
+		if (bindingProperties != null) {
+			bindingProperties.setProducer(producerProperties);
 		}
 	}
 
@@ -332,13 +334,19 @@ public class BindingServiceProperties
 	/*
 	 * The "necessary" implies the scenario where only defaults are defined.
 	 */
-	private void bindIfNecessary(String bindingName) {
-		if (!this.bindings.containsKey(bindingName)) {
-			this.bindToDefault(bindingName);
+	private BindingProperties bindIfNecessary(String bindingName) {
+		BindingProperties existing = this.bindings.get(bindingName);
+		if (existing != null) {
+			return existing;
 		}
+		BindingProperties created = this.bindToDefault();
+		// atomic insert: if another thread won the race, use its instance so that all
+		// callers share the same BindingProperties for a given binding name
+		existing = this.bindings.putIfAbsent(bindingName, created);
+		return existing != null ? existing : created;
 	}
 
-	private void bindToDefault(String binding) {
+	private BindingProperties bindToDefault() {
 		BindingProperties bindingPropertiesTarget = new BindingProperties();
 		Binder binder = new Binder(
 				ConfigurationPropertySources
@@ -350,6 +358,6 @@ public class BindingServiceProperties
 				null);
 		binder.bind("spring.cloud.stream.default",
 				Bindable.ofInstance(bindingPropertiesTarget));
-		this.bindings.put(binding, bindingPropertiesTarget);
+		return bindingPropertiesTarget;
 	}
 }
