@@ -199,18 +199,18 @@ That sounds like a lot of complex things, but in reality, it boils down to these
 Let us analyze each of them.
 The first one is the `ListenerContainerCustomizer` bean that takes a `DefaultErrorHandler`.
 The container is now customized with that particular error handler.
-You can learn more about container customization https://docs.spring.io/spring-cloud-stream/docs/current/reference/html/spring-cloud-stream.html#_advanced_consumer_configuration[here].
+You can learn more about container customization xref:spring-cloud-stream/binding-properties.adoc#advanced-consumer-configuration[here].
 
 The second bean is the `DefaultErrorHandler` that is configured with a publishing to a `DLT`.
-See https://docs.spring.io/spring-kafka/docs/current/reference/html/#seek-to-current[here] for more details on `DefaultErrorHandler`.
+See https://docs.spring.io/spring-kafka/reference/kafka/annotation-error-handling.html#default-eh[here] for more details on `DefaultErrorHandler`.
 
 The third bean is the `DeadLetterPublishingRecoverer` that is ultimately responsible for sending to the `DLT`.
 By default, the `DLT` topic is named as the ORIGINAL_TOPIC_NAME.DLT.
 You can change that though.
-See the https://docs.spring.io/spring-kafka/docs/current/reference/html/#dead-letters[docs] for more details.
+See the https://docs.spring.io/spring-kafka/reference/kafka/annotation-error-handling.html#dead-letters[docs] for more details.
 
 
-We also need to configure an https://docs.spring.io/spring-kafka/docs/current/reference/html/#error-handling-deserializer[ErrorHandlingDeserializer] through application config.
+We also need to configure an https://docs.spring.io/spring-kafka/reference/kafka/serdes.html#error-handling-deserializer[ErrorHandlingDeserializer] through application config.
 
 The `ErrorHandlingDeserializer` delegates to the actual deserializer.
 In case of errors, it sets key/value of the record to be null and includes the raw bytes of the message.
@@ -260,7 +260,7 @@ Can you explain?
 [[basic-offset-management-in-kafka-binder-solution]]
 === Solution
 
-We encourage you read the https://docs.spring.io/spring-cloud-stream-binder-kafka/docs/current/reference/html/spring-cloud-stream-binder-kafka.html#reset-offsets[docs] section on this to get a thorough understanding on it.
+We encourage you read the xref:kafka/kafka-binder/reset-offsets.adoc[docs] section on this to get a thorough understanding on it.
 
 Here is it in a gist:
 
@@ -401,7 +401,7 @@ How do I do that?
 
 By default, Kafka binder delegates to the default commit settings in Spring for Apache Kafka project.
 The default `ackMode` in Spring Kafka is `batch`.
-See https://docs.spring.io/spring-kafka/docs/current/reference/html/#committing-offsets[here] for more details on that.
+See https://docs.spring.io/spring-kafka/reference/kafka/receiving-messages/message-listener-container.html#committing-offsets[here] for more details on that.
 
 There are situations in which you want to disable this default commit behavior and rely on manual commits.
 Following steps allow you to do that.
@@ -706,7 +706,7 @@ public Consumer<Message<String>> consume() {
 }
 ```
 
-If you provide a https://docs.spring.io/spring-cloud-stream-binder-kafka/docs/3.1.3/reference/html/spring-cloud-stream-binder-kafka.html#_kafka_binder_properties[custom header mapper] in the application, then this won't work.
+If you provide a xref:kafka/kafka-binder/config-options.adoc#kafka-binder-properties[custom header mapper] in the application, then this won't work.
 Let's say you have an empty `KafkaHeaderMapper` in the application.
 
 ```

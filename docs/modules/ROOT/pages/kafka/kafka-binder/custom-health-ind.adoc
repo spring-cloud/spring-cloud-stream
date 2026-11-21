@@ -41,7 +41,7 @@ public class KafkaBinderHealthImplementation implements KafkaBinderHealth {
 
     public KafkaBinderHealthImplementation(final KafkaAdmin admin) {
 		// More about configuring Kafka
-		// https://docs.spring.io/spring-kafka/reference/html/#configuring-topics
+		// https://docs.spring.io/spring-kafka/reference/kafka/configuring-topics.html
         this.client = AdminClient.create(admin.getConfigurationProperties());
     }
 
