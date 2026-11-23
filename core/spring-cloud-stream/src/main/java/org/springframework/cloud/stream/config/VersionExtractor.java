@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.config;
 
+import java.util.Map;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -24,18 +26,58 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.stream.function.FunctionConfiguration;
 import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.ResourceLoader;
 
 /**
+ * {@link EnvironmentPostProcessor} that contributes the Spring Cloud Stream banner.
+ * <p>
+ * The banner is stored outside of the default location Spring Boot looks at
+ * ({@code classpath:banner.txt}), so it can never compete with an application's own
+ * banner. It is activated by pointing {@code spring.banner.location} to it, and only when
+ * all of the following is true:
+ * <ul>
+ * <li>{@code spring.cloud.stream.banner.enabled} is not set to {@code false}
+ * (default is {@code true});</li>
+ * <li>the banner is not turned off via {@code spring.main.banner-mode=off};</li>
+ * <li>the application did not configure {@code spring.banner.location};</li>
+ * <li>the application does not provide its own {@code banner.txt} or image banner in
+ * the default location.</li>
+ * </ul>
+ * Otherwise nothing is done, including the extraction of the version numbers that are
+ * only needed to render the banner.
+ *
  * @author Oleg Zhurakousky
  * @author Nicolo Pietro Belcastro
  * @since 4.2.x
  */
 class VersionExtractor implements EnvironmentPostProcessor {
 
+	/**
+	 * Property to disable the Spring Cloud Stream banner.
+	 */
+	static final String BANNER_ENABLED_PROPERTY = "spring.cloud.stream.banner.enabled";
+
+	static final String BANNER_LOCATION = "classpath:org/springframework/cloud/stream/banner.txt";
+
+	private static final String BOOT_BANNER_LOCATION_PROPERTY = "spring.banner.location";
+
+	private static final String BOOT_BANNER_MODE_PROPERTY = "spring.main.banner-mode";
+
+	private static final String BANNER_PROPERTY_SOURCE_NAME = "springCloudStreamBanner";
+
+	private static final String[] APPLICATION_BANNERS = { "banner.txt", "banner.gif", "banner.jpg", "banner.png" };
+
 	protected final Log logger = LogFactory.getLog(getClass());
 
 	@Override
 	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
+		if (!shouldContributeBanner(environment, application)) {
+			return;
+		}
+		environment.getPropertySources().addLast(new MapPropertySource(BANNER_PROPERTY_SOURCE_NAME,
+				Map.of(BOOT_BANNER_LOCATION_PROPERTY, BANNER_LOCATION)));
 		String streamVersion = this.extractVersion(FunctionConfiguration.class);
 		if (logger.isDebugEnabled()) {
 			logger.debug("Spring Cloud Stream version: " + streamVersion);
@@ -46,6 +88,27 @@ class VersionExtractor implements EnvironmentPostProcessor {
 			logger.debug("Spring Cloud Function version: " + functionVersion);
 		}
 		System.setProperty("spring-cloud-function.version", functionVersion);
+	}
+
+	private boolean shouldContributeBanner(ConfigurableEnvironment environment, SpringApplication application) {
+		if (!environment.getProperty(BANNER_ENABLED_PROPERTY, Boolean.class, true)) {
+			return false;
+		}
+		if ("off".equalsIgnoreCase(environment.getProperty(BOOT_BANNER_MODE_PROPERTY))
+				|| environment.containsProperty(BOOT_BANNER_LOCATION_PROPERTY)) {
+			return false;
+		}
+		ResourceLoader resourceLoader = (application.getResourceLoader() != null) ? application.getResourceLoader()
+				: new DefaultResourceLoader(application.getClassLoader());
+		for (String banner : APPLICATION_BANNERS) {
+			if (resourceLoader.getResource("classpath:" + banner).exists()) {
+				if (logger.isDebugEnabled()) {
+					logger.debug("Application provides its own '" + banner + "', Spring Cloud Stream banner is skipped");
+				}
+				return false;
+			}
+		}
+		return true;
 	}
 
 	private String extractVersion(Class<?> clazz) {

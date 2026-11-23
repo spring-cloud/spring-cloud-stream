@@ -8,6 +8,12 @@
 		},
 		{
 			"defaultValue": "true",
+			"name": "spring.cloud.stream.banner.enabled",
+			"description": "Whether to contribute the Spring Cloud Stream banner (shows Spring Cloud Stream and Spring Cloud Function versions). The banner is also skipped when the application provides its own banner, sets 'spring.banner.location' or sets 'spring.main.banner-mode=off'.",
+			"type": "java.lang.Boolean"
+		},
+		{
+			"defaultValue": "true",
 			"name": "management.health.binders.enabled",
 			"description": "Allows to enable/disable binder's' health indicators. If you want to disable health indicator completely, then set it to `false`.",
 			"type": "java.lang.Boolean"

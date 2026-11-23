@@ -34,3 +34,16 @@ If you want to inject the value of the `my.prop` from the root using `@Value` an
 full property name `(@Value(“${spring.cloud.stream.binders.rabbit.environment.my.prop}") String someProperty)` 
 The same goes for `@ConditionalOnProperty` where you would effectively do the same.
 
+
+[[banner]]
+== Banner
+
+Spring Cloud Stream contributes its own startup banner which, besides the Spring Boot version, also shows the Spring Cloud Stream and Spring Cloud Function versions.
+The banner is stored in `org/springframework/cloud/stream/banner.txt` (it is not in the default `banner.txt` location) and it never competes with your application's banner.
+It is used only if none of the following is true:
+
+* your application provides its own `banner.txt` (or `banner.gif`, `banner.jpg`, `banner.png`) in the default location, or sets `spring.banner.location`;
+* the banner is turned off with `spring.main.banner-mode=off`;
+* you set `spring.cloud.stream.banner.enabled=false` (default is `true`).
+
+In any of these cases the Spring Cloud Stream and Spring Cloud Function versions are not even resolved.
