@@ -17,6 +17,9 @@
 package org.springframework.cloud.stream.function;
 
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -145,6 +148,46 @@ public class HeaderTests {
 
 			assertThat(result.getHeaders().getTimestamp()).isNotNull();
 		}
+	}
+
+	@Test
+	void consumerReceivesTimestampWhenInboundMessageHasNone() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(CapturingConsumerConfiguration.class))
+			.web(WebApplicationType.NONE)
+			.run("--spring.jmx.enabled=false",
+				"--spring.cloud.function.definition=capture")) {
+
+			// Messages from binders such as Kafka arrive without a timestamp header
+			Message<byte[]> noTimestamp = new GenericMessage<>("hello".getBytes(), new NoTimestampHeaders());
+			assertThat(noTimestamp.getHeaders().getTimestamp()).isNull();
+
+			context.getBean(InputDestination.class).send(noTimestamp, "capture-in-0");
+
+			Message<byte[]> received = CapturingConsumerConfiguration.RECEIVED.get();
+			assertThat(received).isNotNull();
+			assertThat(received.getHeaders().getTimestamp()).isNotNull();
+		}
+	}
+
+	private static class NoTimestampHeaders extends MessageHeaders {
+
+		NoTimestampHeaders() {
+			super(Map.of(), null, -1L);
+		}
+
+	}
+
+	@EnableAutoConfiguration
+	public static class CapturingConsumerConfiguration {
+
+		static final AtomicReference<Message<byte[]>> RECEIVED = new AtomicReference<>();
+
+		@Bean
+		public Consumer<Message<byte[]>> capture() {
+			return RECEIVED::set;
+		}
+
 	}
 
 	@EnableAutoConfiguration
