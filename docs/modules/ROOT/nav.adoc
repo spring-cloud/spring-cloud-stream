@@ -154,7 +154,6 @@
 #** xref:spring-cloud-stream/overview-instance-index-instance-count.adoc[]
 #** xref:spring-cloud-stream/overview-partitioning.adoc[]
 #** xref:spring-cloud-stream/spring_integration_test_binder.adoc[]
-#** xref:spring-cloud-stream/deploying-applications-on-cloudfoundry.adoc[]
 #* xref:preface.adoc[]
 #* xref:binders.adoc[]
 #* xref:README.adoc[]
