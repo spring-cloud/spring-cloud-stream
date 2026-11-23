@@ -716,19 +716,30 @@ public class FunctionConfiguration {
 				private void doSendMessage(Object result, Message<?> requestMessage) {
 					if (result instanceof Message<?> messageResult && messageResult.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
 						String destinationName = (String) messageResult.getHeaders().get("spring.cloud.stream.sendto.destination");
-						MessageChannel outputChannel = streamBridge.resolveDestination(destinationName, producerProperties, null);
-						BindingProperties bindingProperties = serviceProperties.getBindingProperties(destinationName);
-						ProducerProperties sendToBindingProducerProperties = bindingProperties.getProducer();
-						if (sendToBindingProducerProperties != null && sendToBindingProducerProperties.isPartitioned()) {
-							if (!containsPartitionInterceptor(((AbstractMessageChannel) outputChannel))) {
-								((AbstractMessageChannel) outputChannel)
-								.addInterceptor(new DefaultPartitioningInterceptor(bindingProperties, applicationContext.getBeanFactory()));
+						if (function.isRoutingFunction()) {
+							// The routing function does not convert the output of the function it routed to,
+							// so let StreamBridge do it, using the content type of the destination binding,
+							// the same way it is done for routed output without the sendto header (GH-2719).
+							if (logger.isInfoEnabled()) {
+								logger.info("Output message is sent to '" + destinationName + "' destination");
 							}
+							streamBridge.send(destinationName, messageResult);
 						}
-						if (logger.isInfoEnabled()) {
-							logger.info("Output message is sent to '" + destinationName + "' destination");
+						else {
+							MessageChannel outputChannel = streamBridge.resolveDestination(destinationName, producerProperties, null);
+							BindingProperties bindingProperties = serviceProperties.getBindingProperties(destinationName);
+							ProducerProperties sendToBindingProducerProperties = bindingProperties.getProducer();
+							if (sendToBindingProducerProperties != null && sendToBindingProducerProperties.isPartitioned()) {
+								if (!containsPartitionInterceptor(((AbstractMessageChannel) outputChannel))) {
+									((AbstractMessageChannel) outputChannel)
+									.addInterceptor(new DefaultPartitioningInterceptor(bindingProperties, applicationContext.getBeanFactory()));
+								}
+							}
+							if (logger.isInfoEnabled()) {
+								logger.info("Output message is sent to '" + destinationName + "' destination");
+							}
+							outputChannel.send(messageResult);
 						}
-						outputChannel.send(messageResult);
 					}
 					else if (StringUtils.hasText(outputChannelName)) {
 						if (!(result instanceof Message)) {
