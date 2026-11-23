@@ -24,6 +24,7 @@ import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.cfg.ConstructorDetector;
 import tools.jackson.databind.cfg.MapperBuilder;
 import tools.jackson.databind.exc.InvalidTypeIdException;
 import tools.jackson.databind.json.JsonMapper;
@@ -111,14 +112,23 @@ class BusJacksonMessageConverter extends AbstractMessageConverter implements Ini
 	BusJacksonMessageConverter(MimeType mimeType, @Nullable ObjectMapper objectMapper) {
 		super(mimeType);
 
+		ConstructorDetector constructorDetector;
 		if (objectMapper != null) {
 			this.mapperBuilder = objectMapper.rebuild();
+			constructorDetector = objectMapper.deserializationConfig().getConstructorDetector();
 			this.mapperCreated = false;
 		}
 		else {
 			this.mapperBuilder = JsonMapper.builder();
+			constructorDetector = ConstructorDetector.DEFAULT;
 			this.mapperCreated = true;
 		}
+		// Jackson 3 also considers constructors with matching parameter names when there is
+		// a default constructor. Remote events are bean style (see the default constructor
+		// of RemoteApplicationEvent), so a constructor taking the event source would be
+		// picked and called with a null source. Prefer the default constructor like
+		// Jackson 2 did (GH-3162).
+		this.mapperBuilder.constructorDetector(constructorDetector.withAllowImplicitWithDefaultConstructor(false));
 	}
 
 	/* for testing */ boolean isMapperCreated() {
