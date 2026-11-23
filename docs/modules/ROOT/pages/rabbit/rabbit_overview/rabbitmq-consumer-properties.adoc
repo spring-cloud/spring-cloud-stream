@@ -45,7 +45,7 @@ Example: `${spring.application.name}-${spring.cloud.stream.bindings.input.group}
 Default: none - the broker will generate random consumer tags.
 containerType::
 Select the type of listener container to be used.
-See https://docs.spring.io/spring-amqp/reference/amqp/receiving-messages/choose-container.htmlner.html[Choosing a Container] in the Spring AMQP documentation for more information.
+See https://docs.spring.io/spring-amqp/reference/amqp/receiving-messages/choose-container.html[Choosing a Container] in the Spring AMQP documentation for more information.
 Also see <<rabbitmq-stream>>.
 +
 Default: `simple`
