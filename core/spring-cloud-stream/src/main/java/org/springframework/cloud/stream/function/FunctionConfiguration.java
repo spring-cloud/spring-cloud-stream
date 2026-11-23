@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -418,9 +419,11 @@ public class FunctionConfiguration {
 			// MessageBuilder.build() returns the same instance when no header was
 			// actually modified (fast-path in BaseMessageBuilder), which skips the
 			// GenericMessage constructor and therefore skips stamping a "timestamp"
-			// header. Force a fresh GenericMessage so the header is always present,
-			// restoring pre-4.3.3 behavior. See GH-3211.
-			sanitized = new GenericMessage<>(inputMessage.getPayload(), inputMessage.getHeaders());
+			// header. Force a fresh GenericMessage so the header is always present.
+			// The headers must be copied into a plain Map: passing the MessageHeaders
+			// instance selects the GenericMessage(T, MessageHeaders) constructor,
+			// which reuses it as is and stamps nothing. See GH-3211.
+			sanitized = new GenericMessage<>(inputMessage.getPayload(), new HashMap<>(inputMessage.getHeaders()));
 		}
 		return sanitized;
 	}
