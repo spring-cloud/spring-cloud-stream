@@ -128,6 +128,7 @@ public class RabbitMessageChannelBinderConfiguration {
 		binder.setCompressingPostProcessor(gZipPostProcessor());
 		binder.setDecompressingPostProcessor(deCompressingPostProcessor());
 		binder.setNodes(this.rabbitBinderConfigurationProperties.getNodes());
+		binder.setEnableObservation(this.rabbitBinderConfigurationProperties.isEnableObservation());
 		binder.setExtendedBindingProperties(this.rabbitExtendedBindingProperties);
 		binder.setProducerMessageHandlerCustomizer(producerMessageHandlerCustomizer);
 		binder.setConsumerEndpointCustomizer(consumerCustomizer);

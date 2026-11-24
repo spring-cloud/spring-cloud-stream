@@ -46,6 +46,13 @@ public class RabbitBinderConfigurationProperties {
 	 */
 	private String connectionNamePrefix;
 
+	/**
+	 * Whether to enable Micrometer observation for the listener containers and the
+	 * templates of this binder. Only has an effect when an 'ObservationRegistry' bean is
+	 * present; set to false to opt out.
+	 */
+	private boolean enableObservation = true;
+
 	public String[] getAdminAddresses() {
 		return adminAddresses;
 	}
@@ -76,6 +83,14 @@ public class RabbitBinderConfigurationProperties {
 
 	public void setConnectionNamePrefix(String connectionNamePrefix) {
 		this.connectionNamePrefix = connectionNamePrefix;
+	}
+
+	public boolean isEnableObservation() {
+		return this.enableObservation;
+	}
+
+	public void setEnableObservation(boolean enableObservation) {
+		this.enableObservation = enableObservation;
 	}
 
 }
