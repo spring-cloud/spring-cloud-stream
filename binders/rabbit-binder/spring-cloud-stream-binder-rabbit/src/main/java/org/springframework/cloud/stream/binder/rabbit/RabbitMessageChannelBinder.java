@@ -181,6 +181,8 @@ public class RabbitMessageChannelBinder extends
 
 	private RabbitExtendedBindingProperties extendedBindingProperties = new RabbitExtendedBindingProperties();
 
+	private boolean enableObservation = true;
+
 	public RabbitMessageChannelBinder(ConnectionFactory connectionFactory,
 			RabbitProperties rabbitProperties,
 			RabbitExchangeQueueProvisioner provisioningProvider) {
@@ -233,6 +235,16 @@ public class RabbitMessageChannelBinder extends
 
 	public void setAdminAddresses(String[] adminAddresses) {
 		this.adminAddresses = Arrays.copyOf(adminAddresses, adminAddresses.length);
+	}
+
+	/**
+	 * Set whether Micrometer observation is enabled for the listener containers and the
+	 * templates created by this binder. It is enabled by default, but takes place only
+	 * when an {@code ObservationRegistry} bean is available in the application context.
+	 * @param enableObservation false to opt out of the observation.
+	 */
+	public void setEnableObservation(boolean enableObservation) {
+		this.enableObservation = enableObservation;
 	}
 
 	public void setNodes(String[] nodes) {
@@ -510,9 +522,10 @@ public class RabbitMessageChannelBinder extends
 		}
 		getContainerCustomizer().configure(listenerContainer,
 				consumerDestination.getName(), group);
-		// TODO until https://github.com/spring-cloud/spring-cloud-stream/issues/2902
-		getApplicationContext().getBeanProvider(ObservationRegistry.class)
-				.ifAvailable((observationRegistry) -> listenerContainer.setObservationEnabled(true));
+		if (this.enableObservation) {
+			getApplicationContext().getBeanProvider(ObservationRegistry.class)
+					.ifAvailable((observationRegistry) -> listenerContainer.setObservationEnabled(true));
+		}
 
 		listenerContainer.afterPropertiesSet();
 
@@ -1061,10 +1074,11 @@ public class RabbitMessageChannelBinder extends
 			retryTemplate.setRetryPolicy(retryPolicy);
 			rabbitTemplate.setRetryTemplate(retryTemplate);
 		}
-		// TODO until https://github.com/spring-cloud/spring-cloud-stream/issues/2902
 		AbstractApplicationContext applicationContext = getApplicationContext();
-		applicationContext.getBeanProvider(ObservationRegistry.class)
-				.ifAvailable((observationRegistry) -> rabbitTemplate.setObservationEnabled(true));
+		if (this.enableObservation) {
+			applicationContext.getBeanProvider(ObservationRegistry.class)
+					.ifAvailable((observationRegistry) -> rabbitTemplate.setObservationEnabled(true));
+		}
 		rabbitTemplate.setApplicationContext(applicationContext);
 		rabbitTemplate.afterPropertiesSet();
 		return rabbitTemplate;
