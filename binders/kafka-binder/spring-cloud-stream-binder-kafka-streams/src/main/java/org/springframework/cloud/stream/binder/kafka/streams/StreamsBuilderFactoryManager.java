@@ -23,7 +23,6 @@ import java.util.Set;
 import org.apache.kafka.streams.errors.StreamsUncaughtExceptionHandler;
 
 import org.springframework.beans.factory.DisposableBean;
-import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.boot.web.server.context.WebServerApplicationContext;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
@@ -32,7 +31,6 @@ import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.streams.KafkaStreamsMicrometerListener;
-import org.springframework.lang.NonNull;
 
 /**
  * Iterate through all {@link StreamsBuilderFactoryBean} in the application context and
@@ -41,7 +39,7 @@ import org.springframework.lang.NonNull;
  *
  * This {@link SmartLifecycle} class ensures that the bean created from it is started very
  * late through the bootstrap process by setting the phase value closer to
- * Integer.MAX_VALUE. This is to guarantee that the {@link StreamsBuilderFactoryBean} on a
+ * {@link Integer#MAX_VALUE}. This is to guarantee that the {@link StreamsBuilderFactoryBean} on a
  * function with multiple bindings is only started after all the binding phases have completed successfully.
  *
  * @author Soby Chacko
@@ -78,7 +76,7 @@ public class StreamsBuilderFactoryManager implements SmartLifecycle {
 	}
 
 	@Override
-	public void stop(@NonNull Runnable callback) {
+	public void stop(Runnable callback) {
 		stop();
 		callback.run();
 	}
@@ -103,9 +101,7 @@ public class StreamsBuilderFactoryManager implements SmartLifecycle {
 							this.kafkaStreamsBindingInformationCatalogue.getConsumerPropertiesPerSbfb();
 					final List<ConsumerProperties> consumerProperties = bindingServicePropertiesPerSbfb.get(streamsBuilderFactoryBean);
 					final boolean autoStartupDisabledOnAtLeastOneConsumerBinding = consumerProperties.stream().anyMatch(consumerProperties1 -> !consumerProperties1.isAutoStartup());
-					if (streamsBuilderFactoryBean instanceof SmartInitializingSingleton) {
-						((SmartInitializingSingleton) streamsBuilderFactoryBean).afterSingletonsInstantiated();
-					}
+					streamsBuilderFactoryBean.afterSingletonsInstantiated();
 					if (!autoStartupDisabledOnAtLeastOneConsumerBinding) {
 						streamsBuilderFactoryBean.start();
 						this.kafkaStreamsRegistry.registerKafkaStreams(streamsBuilderFactoryBean);
