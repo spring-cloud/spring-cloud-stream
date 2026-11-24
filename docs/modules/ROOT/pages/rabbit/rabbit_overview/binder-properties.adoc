@@ -34,4 +34,12 @@ A connection name prefix used to name the connection(s) created by this binder.
 The name is this prefix followed by `#n`, where `n` increments each time a new connection is opened.
 +
 Default: none (Spring AMQP default).
-
+spring.cloud.stream.rabbit.binder.enable-observation::
+Whether to enable Micrometer observation (for example, to propagate the tracing context) in the listener containers and the templates created by this binder.
+An `ObservationRegistry` bean must be available in the application context.
+In a multi-binder configuration, set it in the `environment` of the binder.
++
+NOTE: Observation is disabled unless you enable it with this property.
+Earlier versions enabled it implicitly when an `ObservationRegistry` bean was present.
++
+Default: `false`.
