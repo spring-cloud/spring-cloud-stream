@@ -74,13 +74,13 @@ public class RabbitMultiBinderObservationDisabledTests {
 	}
 
 	@Test
-	void observationIsNotPropagatedByDefaultOrWhenDisabled() throws InterruptedException {
+	void observationIsNotPropagatedWhenOptedOut() throws InterruptedException {
 		Observation.createNotStarted("test parent observation", this.observationRegistry)
 			.observe(() -> this.streamBridge.send("test-out-0", "test data"));
 
 		assertThat(this.testConfiguration.messageReceived.await(10, TimeUnit.SECONDS)).isTrue();
 
-		// Without the observation enabled in the binder neither the RabbitTemplate nor the Rabbit listener
+		// With the observation opted out of in the binder neither the RabbitTemplate nor the Rabbit listener
 		// produce their spans.
 		// parent -> StreamBridge -> AmqpOutboundEndpoint -> (no RabbitTemplate, no Rabbit listener) -> Consumer
 		await().during(1, TimeUnit.SECONDS)

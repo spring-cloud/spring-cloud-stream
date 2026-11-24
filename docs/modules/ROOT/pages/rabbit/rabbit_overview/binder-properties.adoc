@@ -36,10 +36,8 @@ The name is this prefix followed by `#n`, where `n` increments each time a new c
 Default: none (Spring AMQP default).
 spring.cloud.stream.rabbit.binder.enable-observation::
 Whether to enable Micrometer observation (for example, to propagate the tracing context) in the listener containers and the templates created by this binder.
-An `ObservationRegistry` bean must be available in the application context.
+It has an effect only when an `ObservationRegistry` bean is available in the application context.
+Set it to `false` to opt out.
 In a multi-binder configuration, set it in the `environment` of the binder.
 +
-NOTE: Observation is disabled unless you enable it with this property.
-Earlier versions enabled it implicitly when an `ObservationRegistry` bean was present.
-+
-Default: `false`.
+Default: `true`.

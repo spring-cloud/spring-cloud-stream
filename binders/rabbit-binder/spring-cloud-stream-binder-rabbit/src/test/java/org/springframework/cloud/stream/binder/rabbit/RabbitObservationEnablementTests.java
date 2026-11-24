@@ -38,7 +38,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 /**
- * GH-2902: the observation is opt-in, via the {@code enableObservation} binder property.
+ * GH-2902: the observation can be opted out of, via the {@code enableObservation} binder
+ * property.
  *
  * @since 5.1.1
  */
@@ -48,35 +49,44 @@ class RabbitObservationEnablementTests {
 		.withUserConfiguration(PropertiesConfiguration.class);
 
 	@Test
-	void observationIsDisabledByDefault() {
+	void observationIsEnabledByDefault() {
 		this.contextRunner.run((context) -> assertThat(
-				context.getBean(RabbitBinderConfigurationProperties.class).isEnableObservation()).isFalse());
+				context.getBean(RabbitBinderConfigurationProperties.class).isEnableObservation()).isTrue());
 	}
 
 	@Test
-	void observationCanBeEnabled() {
-		this.contextRunner.withPropertyValues("spring.cloud.stream.rabbit.binder.enable-observation=true")
+	void observationCanBeDisabled() {
+		this.contextRunner.withPropertyValues("spring.cloud.stream.rabbit.binder.enable-observation=false")
 			.run((context) -> assertThat(
-					context.getBean(RabbitBinderConfigurationProperties.class).isEnableObservation()).isTrue());
+					context.getBean(RabbitBinderConfigurationProperties.class).isEnableObservation()).isFalse());
 	}
 
 	@Test
-	void templateObservationIsNotEnabledByDefaultEvenWithObservationRegistry() throws Exception {
+	void templateObservationIsEnabledByDefaultWithObservationRegistry() throws Exception {
 		assertThat(observationEnabled(new RabbitMessageChannelBinder(mock(ConnectionFactory.class),
-				new RabbitProperties(), null))).isFalse();
+				new RabbitProperties(), null), true)).isTrue();
 	}
 
 	@Test
-	void templateObservationIsEnabledWhenRequested() throws Exception {
+	void templateObservationIsDisabledWhenOptedOut() throws Exception {
 		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(mock(ConnectionFactory.class),
 				new RabbitProperties(), null);
-		binder.setEnableObservation(true);
-		assertThat(observationEnabled(binder)).isTrue();
+		binder.setEnableObservation(false);
+		assertThat(observationEnabled(binder, true)).isFalse();
 	}
 
-	private boolean observationEnabled(RabbitMessageChannelBinder binder) throws Exception {
+	@Test
+	void templateObservationIsNotEnabledWithoutObservationRegistry() throws Exception {
+		assertThat(observationEnabled(new RabbitMessageChannelBinder(mock(ConnectionFactory.class),
+				new RabbitProperties(), null), false)).isFalse();
+	}
+
+	private boolean observationEnabled(RabbitMessageChannelBinder binder, boolean withObservationRegistry)
+			throws Exception {
 		try (GenericApplicationContext context = new GenericApplicationContext()) {
-			context.registerBean(ObservationRegistry.class, ObservationRegistry::create);
+			if (withObservationRegistry) {
+				context.registerBean(ObservationRegistry.class, ObservationRegistry::create);
+			}
 			context.refresh();
 			binder.setApplicationContext(context);
 			Method buildRabbitTemplate = ReflectionUtils.findMethod(RabbitMessageChannelBinder.class,

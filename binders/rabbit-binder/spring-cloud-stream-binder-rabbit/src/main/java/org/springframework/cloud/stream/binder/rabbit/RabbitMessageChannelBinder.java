@@ -33,6 +33,7 @@ import java.util.regex.Pattern;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Envelope;
+import io.micrometer.observation.ObservationRegistry;
 
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.ImmediateAcknowledgeAmqpException;
@@ -180,7 +181,7 @@ public class RabbitMessageChannelBinder extends
 
 	private RabbitExtendedBindingProperties extendedBindingProperties = new RabbitExtendedBindingProperties();
 
-	private boolean enableObservation;
+	private boolean enableObservation = true;
 
 	public RabbitMessageChannelBinder(ConnectionFactory connectionFactory,
 			RabbitProperties rabbitProperties,
@@ -238,9 +239,9 @@ public class RabbitMessageChannelBinder extends
 
 	/**
 	 * Set whether Micrometer observation is enabled for the listener containers and the
-	 * templates created by this binder. An {@code ObservationRegistry} bean must be
-	 * available in the application context for the observation to take place.
-	 * @param enableObservation true to enable the observation.
+	 * templates created by this binder. It is enabled by default, but takes place only
+	 * when an {@code ObservationRegistry} bean is available in the application context.
+	 * @param enableObservation false to opt out of the observation.
 	 */
 	public void setEnableObservation(boolean enableObservation) {
 		this.enableObservation = enableObservation;
@@ -521,7 +522,10 @@ public class RabbitMessageChannelBinder extends
 		}
 		getContainerCustomizer().configure(listenerContainer,
 				consumerDestination.getName(), group);
-		listenerContainer.setObservationEnabled(this.enableObservation);
+		if (this.enableObservation) {
+			getApplicationContext().getBeanProvider(ObservationRegistry.class)
+					.ifAvailable((observationRegistry) -> listenerContainer.setObservationEnabled(true));
+		}
 
 		listenerContainer.afterPropertiesSet();
 
@@ -1071,7 +1075,10 @@ public class RabbitMessageChannelBinder extends
 			rabbitTemplate.setRetryTemplate(retryTemplate);
 		}
 		AbstractApplicationContext applicationContext = getApplicationContext();
-		rabbitTemplate.setObservationEnabled(this.enableObservation);
+		if (this.enableObservation) {
+			applicationContext.getBeanProvider(ObservationRegistry.class)
+					.ifAvailable((observationRegistry) -> rabbitTemplate.setObservationEnabled(true));
+		}
 		rabbitTemplate.setApplicationContext(applicationContext);
 		rabbitTemplate.afterPropertiesSet();
 		return rabbitTemplate;

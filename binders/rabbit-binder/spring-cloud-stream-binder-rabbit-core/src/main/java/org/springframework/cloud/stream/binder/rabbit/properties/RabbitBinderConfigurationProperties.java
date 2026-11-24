@@ -48,9 +48,10 @@ public class RabbitBinderConfigurationProperties {
 
 	/**
 	 * Whether to enable Micrometer observation for the listener containers and the
-	 * templates of this binder. Requires an 'ObservationRegistry' bean.
+	 * templates of this binder. Only has an effect when an 'ObservationRegistry' bean is
+	 * present; set to false to opt out.
 	 */
-	private boolean enableObservation;
+	private boolean enableObservation = true;
 
 	public String[] getAdminAddresses() {
 		return adminAddresses;
