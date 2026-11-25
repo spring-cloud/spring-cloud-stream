@@ -66,8 +66,8 @@ NOTE: The topic must be provisioned to have enough partitions to achieve the des
 The above configuration supports up to 12 consumer instances (6 if their `concurrency` is 2, 4 if their concurrency is 3, and so on).
 It is generally best to "`over-provision`" the partitions to allow for future increases in consumers or concurrency.
 
-NOTE: The preceding configuration uses the default partitioning (`key.hashCode() % partitionCount`).
-This may or may not provide a suitably balanced algorithm, depending on the key values. In particular, note that this partitioning strategy differs from the default used by a standalone Kafka producer - such as the one used by Kafka Streams, meaning that the same key value may balance differently across partitions when produced by those clients.
+NOTE: The preceding configuration uses the default partitioning (the Murmur2 hash of the key, modulo `partitionCount`; before version 5.1.0 it was `key.hashCode() % partitionCount`, see xref:spring-cloud-stream/overview-partitioning.adoc[Partitioning]).
+This may or may not provide a suitably balanced algorithm, depending on the key values. In particular, note that the key is hashed from its string representation and not from the bytes produced by the configured key serializer, so the same key value may still be mapped to a different partition than when it is produced by a standalone Kafka producer - such as the one used by Kafka Streams.
 You can override this default by using the `partitionSelectorExpression` or `partitionSelectorClass` properties.
 
 Since partitions are natively handled by Kafka, no special configuration is needed on the consumer side.

@@ -59,7 +59,24 @@ NOTE: In previous versions of Spring Cloud Stream, you could specify the impleme
 Since version 3.0, this property is removed.
 
 Once the message key is calculated, the partition selection process determines the target partition as a value between `0` and `partitionCount - 1`.
-The default calculation, applicable in most scenarios, is based on the following formula: `key.hashCode() % partitionCount`.
+The default calculation, applicable in most scenarios, hashes the string representation of the key (`key.toString()`, as UTF-8 bytes) with the Murmur2 algorithm, which is also what the Kafka producer uses, and then applies the formula `hash % partitionCount` to the non-negative result.
+
+[IMPORTANT]
+====
+Before version 5.1.0 the default calculation was `key.hashCode() % partitionCount`.
+Because the hash function changed, the same key is mapped to a different partition than with earlier versions.
+When you upgrade an application that relies on a key always being sent to the same partition (for example for ordering) while there is still data for that key in the topic, the new records for the key can end up in a different partition than the existing ones.
+To keep the previous behavior, declare a `PartitionSelectorStrategy` bean that returns `key.hashCode()`:
+
+[source, java]
+----
+@Bean
+public PartitionSelectorStrategy partitionSelectorStrategy() {
+	return (key, partitionCount) -> key.hashCode();
+}
+----
+====
+
 This can be customized on the binding, either by setting a SpEL expression to be evaluated against the 'key' (through the `partitionSelectorExpression` property) or by configuring an implementation of `org.springframework.cloud.stream.binder.PartitionSelectorStrategy` as a bean (by using the @Bean annotation).
 Similar to the `PartitionKeyExtractorStrategy`, you can further filter it by using the `spring.cloud.stream.bindings.output.producer.partitionSelectorName` property when more than one bean of this type is available in the Application Context, as shown in the following example:
 
