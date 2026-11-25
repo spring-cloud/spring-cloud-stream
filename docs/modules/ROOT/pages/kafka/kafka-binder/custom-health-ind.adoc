@@ -82,3 +82,34 @@ public class KafkaBinderHealthIndicatorConfiguration {
 	}
 }
 ----
+
+[[custom-kafka-binder-health-indicator-multiple-binders]]
+== Custom Health Indicator with Multiple Binders
+
+When you define several binders with `spring.cloud.stream.binders.<name>.*` (see xref:spring-cloud-stream/multiple-systems.adoc[Connecting to Multiple Systems]), each binder runs in its own application context, isolated from the application context in which you declare your beans.
+As a result, a `KafkaBinderHealth` bean declared in the application, as shown above, is *not* picked up by those binders: each of them still creates its default Kafka binder health indicator.
+The bean is only registered as an ordinary health indicator of the application.
+
+To provide a custom health indicator for a particular binder, declare the `KafkaBinderHealth` bean in a configuration class and add that class to the context of the binder with `spring.main.sources`, which you set in the `environment` of the binder.
+
+```
+@Configuration
+public class Kafka1HealthConfiguration {
+
+	@Bean
+	public KafkaBinderHealth kafkaBinderHealthIndicator() {
+		return new KafkaBinderHealthImplementation(...);
+	}
+}
+```
+
+```
+spring.cloud.stream.binders.kafka1.type=kafka
+spring.cloud.stream.binders.kafka1.environment.spring.main.sources=com.example.Kafka1HealthConfiguration
+spring.cloud.stream.binders.kafka2.type=kafka
+```
+
+Do not annotate this class so that it is component scanned by the application, otherwise the bean is registered in the application context as well.
+In this example only the `kafka1` binder uses the custom health indicator, while `kafka2` keeps the default one.
+The health of each binder is reported under its name in the `binders` health contributor.
+Because the bean lives in the context of the binder, it can only depend on the beans and the properties that are available in that context and not on the beans declared in the application context.
