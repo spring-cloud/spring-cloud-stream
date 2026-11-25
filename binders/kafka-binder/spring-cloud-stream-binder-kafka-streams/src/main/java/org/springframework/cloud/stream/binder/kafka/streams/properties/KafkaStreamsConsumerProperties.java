@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.properties;
 
+import java.time.Duration;
+
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.DeserializationExceptionHandler;
 
@@ -25,6 +27,7 @@ import org.springframework.cloud.stream.binder.kafka.streams.DeserializationExce
  * @author Marius Bogoevici
  * @author Soby Chacko
  * @author Gihong Park
+ * @author Oleg Zhurakousky
  */
 public class KafkaStreamsConsumerProperties extends KafkaConsumerProperties {
 
@@ -44,6 +47,12 @@ public class KafkaStreamsConsumerProperties extends KafkaConsumerProperties {
 	 * Materialized as a KeyValueStore.
 	 */
 	private String materializedAs;
+
+	/**
+	 * History retention of the versioned state store the incoming KTable is materialized as.
+	 * Requires materializedAs. When not set, a non-versioned KeyValueStore is used.
+	 */
+	private Duration versionedHistoryRetention;
 
 	/**
 	 * Disable caching for materialized KTable.
@@ -118,6 +127,14 @@ public class KafkaStreamsConsumerProperties extends KafkaConsumerProperties {
 
 	public void setMaterializedAs(String materializedAs) {
 		this.materializedAs = materializedAs;
+	}
+
+	public Duration getVersionedHistoryRetention() {
+		return this.versionedHistoryRetention;
+	}
+
+	public void setVersionedHistoryRetention(Duration versionedHistoryRetention) {
+		this.versionedHistoryRetention = versionedHistoryRetention;
 	}
 
 	public boolean isCachingDisabled() {

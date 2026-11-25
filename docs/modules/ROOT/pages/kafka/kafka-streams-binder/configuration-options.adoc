@@ -146,6 +146,14 @@ state store to materialize when using incoming KTable types
 +
 Default: `none`.
 
+versionedHistoryRetention::
+History retention (a `java.time.Duration`, for example `PT1H`) of the state store the incoming `KTable` is materialized as.
+When set, the binder materializes the `KTable` as a versioned key-value store (`Stores.persistentVersionedKeyValueStore`) instead of a plain `KeyValueStore`, so that stream-table joins and lookups can use the table value that was valid at a given timestamp.
+Requires `materializedAs`, which supplies the store name, and is not supported for `GlobalKTable` bindings.
+See xref:kafka/kafka-streams-binder/state-store.adoc#versioned-ktable[Materializing an incoming KTable as a versioned store].
++
+Default: `none` (a non-versioned `KeyValueStore` is used).
+
 cachingDisabled::
 Disable caching for materialized KTable.
 When set to `true`, calls `withCachingDisabled()` on the Materialized object.

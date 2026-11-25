@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -52,6 +53,7 @@ import org.apache.kafka.streams.processor.api.Record;
 import org.apache.kafka.streams.processor.api.RecordMetadata;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.StoreBuilder;
+import org.apache.kafka.streams.state.Stores;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -160,6 +162,9 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		}
 		if (parameterType.isAssignableFrom(KTable.class)) {
 			String materializedAs = extendedConsumerProperties.getMaterializedAs();
+			Assert.state(extendedConsumerProperties.getVersionedHistoryRetention() == null
+							|| StringUtils.hasText(materializedAs),
+					"'versionedHistoryRetention' on binding '" + input + "' requires 'materializedAs' to be set");
 			String bindingDestination = this.bindingServiceProperties.getBindingDestination(input);
 			KTable<?, ?> table = getKTable(extendedConsumerProperties, streamsBuilder, keySerde, valueSerde, materializedAs,
 					bindingDestination, autoOffsetReset);
@@ -173,6 +178,8 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 			arguments[index] = table;
 		}
 		else if (parameterType.isAssignableFrom(GlobalKTable.class)) {
+			Assert.state(extendedConsumerProperties.getVersionedHistoryRetention() == null,
+					"'versionedHistoryRetention' on binding '" + input + "' is not supported for GlobalKTable");
 			String materializedAs = extendedConsumerProperties.getMaterializedAs();
 			String bindingDestination = this.bindingServiceProperties.getBindingDestination(input);
 			GlobalKTable<?, ?> table = getGlobalKTable(extendedConsumerProperties, streamsBuilder, keySerde, valueSerde, materializedAs,
@@ -577,14 +584,18 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 
 		final Consumed<K, V> consumed = getConsumed(kafkaStreamsConsumerProperties, k, v, autoOffsetReset);
 		return streamsBuilder.table(this.bindingServiceProperties.getBindingDestination(destination),
-				consumed, getMaterialized(storeName, k, v, kafkaStreamsConsumerProperties.isCachingDisabled(), kafkaStreamsConsumerProperties.isLoggingDisabled()));
+				consumed, getMaterialized(storeName, k, v, kafkaStreamsConsumerProperties.isCachingDisabled(),
+						kafkaStreamsConsumerProperties.isLoggingDisabled(),
+						kafkaStreamsConsumerProperties.getVersionedHistoryRetention()));
 	}
 
 	private <K, V> Materialized<K, V, KeyValueStore<Bytes, byte[]>> getMaterialized(
-			String storeName, Serde<K> k, Serde<V> v, Boolean isCachingDisabled, Boolean isLoggingDisabled) {
-		Materialized<K, V, KeyValueStore<Bytes, byte[]>> materialized =
-			Materialized.<K, V, KeyValueStore<Bytes, byte[]>>as(storeName)
-				.withKeySerde(k).withValueSerde(v);
+			String storeName, Serde<K> k, Serde<V> v, Boolean isCachingDisabled, Boolean isLoggingDisabled,
+			Duration versionedHistoryRetention) {
+		Materialized<K, V, KeyValueStore<Bytes, byte[]>> materialized = versionedHistoryRetention != null
+				? Materialized.<K, V>as(Stores.persistentVersionedKeyValueStore(storeName, versionedHistoryRetention))
+				: Materialized.<K, V, KeyValueStore<Bytes, byte[]>>as(storeName);
+		materialized = materialized.withKeySerde(k).withValueSerde(v);
 
 		if (isCachingDisabled != null) {
 			if (isCachingDisabled) {
@@ -611,7 +622,8 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		return streamsBuilder.globalTable(
 				this.bindingServiceProperties.getBindingDestination(destination),
 				consumed,
-				getMaterialized(storeName, k, v, kafkaStreamsConsumerProperties.isCachingDisabled(), kafkaStreamsConsumerProperties.isLoggingDisabled()));
+				getMaterialized(storeName, k, v, kafkaStreamsConsumerProperties.isCachingDisabled(),
+						kafkaStreamsConsumerProperties.isLoggingDisabled(), null));
 	}
 
 	private GlobalKTable<?, ?> getGlobalKTable(KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties,

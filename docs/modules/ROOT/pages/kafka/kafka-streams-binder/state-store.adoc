@@ -22,6 +22,27 @@ Then by setting the following property, the incoming `KTable` data will be mater
 spring.cloud.stream.kafka.streams.bindings.process-in-1.consumer.materializedAs: incoming-store
 ----
 
+[[versioned-ktable]]
+== Materializing an incoming KTable as a versioned store
+
+By default, the incoming `KTable` is materialized as a non-versioned `KeyValueStore`.
+Kafka Streams also supports versioned key-value stores, which keep older values of a key so that stream-table joins can use the table value that was valid at the stream record's timestamp.
+To materialize the incoming `KTable` as a versioned store, set `versionedHistoryRetention` in addition to `materializedAs`:
+
+[source]
+----
+spring.cloud.stream.kafka.streams.bindings.process-in-1.consumer.materializedAs: incoming-store
+spring.cloud.stream.kafka.streams.bindings.process-in-1.consumer.versionedHistoryRetention: PT1H
+----
+
+The binder then creates the store with `Stores.persistentVersionedKeyValueStore("incoming-store", Duration.ofHours(1))`.
+The value is the history retention: how long older versions of a record are kept.
+Because the table is still built from the input topic (`StreamsBuilder.table`), the Kafka Streams `topology.optimization` setting applies as it does for a non-versioned table.
+
+NOTE: `versionedHistoryRetention` requires `materializedAs` and is rejected at startup if `materializedAs` is missing.
+It is not supported for `GlobalKTable` bindings.
+A versioned store is queried with the Kafka Streams interactive queries v2 API (`KafkaStreams.query(...)` with a `VersionedKeyQuery`) and not with `QueryableStoreTypes`.
+
 You can define custom state stores as beans in your application and those will be detected and added to the Kafka Streams builder by the binder.
 Especially when the processor API is used, you need to register a state store manually.
 In order to do so, you can create the StateStore as a bean in the application.
