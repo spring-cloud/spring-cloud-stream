@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -278,6 +279,23 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 		Assert.isTrue(binderTypes.size() <= 1, "More than one binder types found, but no binder specified on the binding");
 		return binderTypes.isEmpty() ? null : binderTypes.keySet().iterator().next();
+	}
+
+	/**
+	 * Create a {@link SendResultDispatcher} for the given producer binding if the
+	 * application context contains {@link SendResultListener} beans. Binders that can
+	 * report the outcome of a send call this when they create the producer message
+	 * handler and notify the dispatcher when the broker acknowledges, or fails, a
+	 * message.
+	 * @param bindingName the name of the producer binding
+	 * @return the dispatcher, or {@code null} if there are no listeners
+	 * @since 5.1.1
+	 */
+	@Nullable
+	protected SendResultDispatcher sendResultDispatcher(String bindingName) {
+		List<SendResultListener> listeners = getApplicationContext()
+				.getBeanProvider(SendResultListener.class).orderedStream().toList();
+		return listeners.isEmpty() ? null : new SendResultDispatcher(bindingName, listeners);
 	}
 
 	/**

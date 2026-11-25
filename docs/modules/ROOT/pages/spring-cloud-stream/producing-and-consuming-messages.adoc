@@ -315,6 +315,54 @@ When using Observability support provided by the framework as well as supporting
 </dependency>
 ----
 
+[[streambridge-send-results]]
+==== Being notified of the outcome of a send
+
+By default sending is "fire and forget". `StreamBridge.send(..)` returns a `boolean` that only tells you whether the message was accepted by the binder, not whether the broker acknowledged it, and the acknowledgement or failure of a send that is performed asynchronously by the broker client never reaches your code.
+
+Since version 5.1.1 you can be notified of the outcome by declaring a bean of type `SendResultListener`.
+It is not specific to `StreamBridge`: it is invoked for the messages sent through the producer bindings of a binder that supports it, which includes the messages sent with `StreamBridge`.
+Use the binding name that is passed to the callbacks if you are only interested in some bindings.
+
+[source, java]
+----
+@Bean
+public SendResultListener sendResultListener() {
+	return new SendResultListener() {
+
+		@Override
+		public void onSuccess(String bindingName, Message<?> message, Object result) {
+			// result is a RecordMetadata for the Kafka binder: the topic, partition and offset
+		}
+
+		@Override
+		public void onError(String bindingName, Message<?> message, Throwable exception) {
+			// the broker did not acknowledge the message
+		}
+
+	};
+}
+----
+
+Both methods have empty default implementations, so you only need to override those that you are interested in.
+If there are several `SendResultListener` beans they are all invoked, in their order.
+
+The message passed to the callbacks is the message as it was handed to the binder, that is, after payload conversion (so with a `byte[]` payload) and with the headers that were set for sending.
+To correlate a result with the action that triggered the send, set a header on the message you send and read it back in the listener.
+
+[source, java]
+----
+streamBridge.send("orders-out", MessageBuilder.withPayload(order).setHeader("orderId", order.id()).build());
+----
+
+[IMPORTANT]
+====
+* The callbacks are invoked by the thread that completes the send, for example the Kafka producer I/O thread, and not by the thread that called `send(..)`. They must return quickly and must not block. An exception thrown by a listener is logged and otherwise ignored.
+* Only failures that are reported after the message was handed to the broker client are passed to `onError`. A failure that is detected while sending, such as a record that is larger than the producer's `max.request.size`, is thrown from `send(..)` as before.
+* Currently only the Kafka binder reports the outcome of a send; the `result` it passes to `onSuccess` is the `RecordMetadata` of the record. Other binders ignore `SendResultListener` beans.
+* A `SendResultListener` does not replace the existing mechanisms. The producer error channel (`errorChannelEnabled`) and the Kafka `recordMetadataChannel` keep working and receive the same messages as before.
+====
+
 [[streambridge-and-dynamic-destinations]]
 ==== StreamBridge and Dynamic Destinations
 

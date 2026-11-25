@@ -72,6 +72,7 @@ import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.cloud.stream.binder.PartitionHandler;
+import org.springframework.cloud.stream.binder.SendResultDispatcher;
 import org.springframework.cloud.stream.binder.kafka.common.BinderHeaderMapper;
 import org.springframework.cloud.stream.binder.kafka.common.TopicInformation;
 import org.springframework.cloud.stream.binder.kafka.config.ClientFactoryCustomizer;
@@ -113,6 +114,7 @@ import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaAdmin;
+import org.springframework.kafka.core.KafkaProducerException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
@@ -473,11 +475,22 @@ public class KafkaMessageChannelBinder extends
 		}
 		ProducerConfigurationMessageHandler handler = new ProducerConfigurationMessageHandler(
 				kafkaTemplate, destination.getName(), producerProperties, producerFB, getBeanFactory());
-		if (errorChannel != null) {
-			handler.setSendFailureChannel(errorChannel);
+		SendResultDispatcher sendResultDispatcher = sendResultDispatcher(
+				StringUtils.hasText(producerProperties.getBindingName()) ? producerProperties.getBindingName()
+						: destination.getName());
+		String recordMetadataChannel = producerProperties.getExtension().getRecordMetadataChannel();
+		if (sendResultDispatcher != null) {
+			// Notify the SendResultListeners and still honor the error channel and the recordMetadataChannel
+			handler.setSendFailureChannel(sendFailureChannel(sendResultDispatcher, errorChannel));
+			handler.setSendSuccessChannel(sendSuccessChannel(sendResultDispatcher, recordMetadataChannel));
 		}
-		if (StringUtils.hasText(producerProperties.getExtension().getRecordMetadataChannel())) {
-			handler.setSendSuccessChannelName(producerProperties.getExtension().getRecordMetadataChannel());
+		else {
+			if (errorChannel != null) {
+				handler.setSendFailureChannel(errorChannel);
+			}
+			if (StringUtils.hasText(recordMetadataChannel)) {
+				handler.setSendSuccessChannelName(recordMetadataChannel);
+			}
 		}
 		AbstractApplicationContext applicationContext = getApplicationContext();
 		handler.setApplicationContext(applicationContext);
@@ -1547,6 +1560,30 @@ public class KafkaMessageChannelBinder extends
 					+ dataType
 					+ " is not byte[] and no serializer is set on the DLQ producer.");
 		}
+	}
+
+	private MessageChannel sendFailureChannel(SendResultDispatcher dispatcher, @Nullable MessageChannel errorChannel) {
+		return (message, timeout) -> {
+			if (message.getPayload() instanceof MessagingException exception) {
+				Throwable cause = exception.getCause() != null ? exception.getCause() : exception;
+				if (cause instanceof KafkaProducerException && cause.getCause() != null) {
+					// report the exception raised by the Kafka client, not spring-kafka's wrapper
+					cause = cause.getCause();
+				}
+				dispatcher.failure(exception.getFailedMessage() != null ? exception.getFailedMessage() : message, cause);
+			}
+			return errorChannel == null || errorChannel.send(message, timeout);
+		};
+	}
+
+	private MessageChannel sendSuccessChannel(SendResultDispatcher dispatcher, @Nullable String recordMetadataChannel) {
+		return (message, timeout) -> {
+			Object metadata = message.getHeaders().get(KafkaHeaders.RECORD_METADATA);
+			dispatcher.success(MessageBuilder.fromMessage(message).removeHeader(KafkaHeaders.RECORD_METADATA).build(),
+					metadata);
+			return !StringUtils.hasText(recordMetadataChannel)
+					|| getBeanFactory().getBean(recordMetadataChannel, MessageChannel.class).send(message, timeout);
+		};
 	}
 
 	protected ConsumerFactory<?, ?> createKafkaConsumerFactory(boolean anonymous,

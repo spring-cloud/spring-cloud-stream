@@ -407,6 +407,7 @@ The header contains a `RecordMetadata` object provided by the Kafka client; it i
 `ResultMetadata meta = sendResultMsg.getHeaders().get(KafkaHeaders.RECORD_METADATA, RecordMetadata.class)`
 +
 Failed sends go the producer error channel (if configured); see xref:kafka/kafka-binder/error-channels.adoc[Kafka error channels].
+To be notified of the outcome of every send in code, without configuring channels, declare a `SendResultListener` bean; see xref:spring-cloud-stream/producing-and-consuming-messages.adoc#streambridge-send-results[Being notified of the outcome of a send].
 +
 Default: null.
 
