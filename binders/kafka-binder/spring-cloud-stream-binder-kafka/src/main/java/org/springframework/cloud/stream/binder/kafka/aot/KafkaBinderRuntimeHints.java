@@ -50,8 +50,8 @@ public class KafkaBinderRuntimeHints implements RuntimeHintsRegistrar {
 				KafkaBindingProperties.class)
 			.forEach(type -> reflectionHints.registerType(type,
 				builder -> builder.withMembers(MemberCategory.INVOKE_DECLARED_METHODS)));
-		// KafkaBinderEnvironmentPostProcessor sets these as default (de)serializers by
-		// class name, so they are only ever resolved reflectively via Class.forName.
+		// The binder configures these as its default (de)serializers (see BindingUtils),
+		// and the Kafka client only ever instantiates them reflectively.
 		Stream.of(ByteArrayDeserializer.class, ByteArraySerializer.class)
 			.forEach(type -> reflectionHints.registerType(type, MemberCategory.INVOKE_PUBLIC_CONSTRUCTORS));
 	}

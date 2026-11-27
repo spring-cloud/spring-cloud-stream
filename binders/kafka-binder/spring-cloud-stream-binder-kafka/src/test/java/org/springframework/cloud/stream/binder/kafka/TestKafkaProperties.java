@@ -22,8 +22,8 @@ import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 
 /**
- * Test {@link KafkaProperties} initialized in the same way as the
- * {@code KafkaBinderEnvironmentPostProcessor} initializes the properties.
+ * Test {@link KafkaProperties} with {@code byte[]} (de)serializers, which is what the
+ * binder ends up using.
  *
  * @author Gary Russell
  * @since 2.1

@@ -47,6 +47,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = {
 	"spring.cloud.function.definition=barConsumer;fooConsumer",
 	"spring.kafka.listener.immediate-stop=true",
+	"spring.kafka.producer.value-serializer=org.apache.kafka.common.serialization.ByteArraySerializer",
 	"spring.cloud.stream.kafka.binder.enableObservation=true",
 	"management.endpoint.bindings.enabled=true",
 	"management.endpoints.web.exposure.include=bindings",

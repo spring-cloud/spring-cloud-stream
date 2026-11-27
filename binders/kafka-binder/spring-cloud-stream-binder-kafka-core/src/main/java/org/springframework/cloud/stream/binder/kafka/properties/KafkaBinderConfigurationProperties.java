@@ -35,6 +35,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.kafka.autoconfigure.KafkaConfigBuilder;
@@ -403,6 +405,8 @@ public class KafkaBinderConfigurationProperties {
 	public Map<String, Object> mergedConsumerConfiguration() {
 		Map<String, Object> consumerConfiguration = new HashMap<>(
 			KafkaConfigBuilder.of(this.kafkaProperties).consumer().build());
+		removeBootDefaultSerialization(consumerConfiguration, StringDeserializer.class,
+				ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG);
 		if (!consumerConfiguration.containsKey(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG) && this.kafkaConnectionDetails != null) {
 			consumerConfiguration.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, this.kafkaConnectionDetails.getConsumer().getBootstrapServers());
 		}
@@ -433,6 +437,8 @@ public class KafkaBinderConfigurationProperties {
 	public Map<String, Object> mergedProducerConfiguration() {
 		Map<String, Object> producerConfiguration = new HashMap<>(
 			KafkaConfigBuilder.of(this.kafkaProperties).producer().build());
+		removeBootDefaultSerialization(producerConfiguration, StringSerializer.class,
+				ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG);
 		if (!producerConfiguration.containsKey(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG) && this.kafkaConnectionDetails != null) {
 			producerConfiguration.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, this.kafkaConnectionDetails.getProducer().getBootstrapServers());
 		}
@@ -450,6 +456,22 @@ public class KafkaBinderConfigurationProperties {
 		// configured in the binder
 		return getConfigurationWithBootstrapServer(producerConfiguration,
 				ProducerConfig.BOOTSTRAP_SERVERS_CONFIG);
+	}
+
+	/**
+	 * Spring Boot defaults the (de)serializers to the {@code String} ones, which the
+	 * binder must not pick up since it works with {@code byte[]}. Remove them so the
+	 * binder's own (de)serializers apply, while anything else configured through
+	 * {@code spring.kafka} is still honored.
+	 */
+	private static void removeBootDefaultSerialization(Map<String, Object> configuration, Class<?> bootDefault,
+			String... keys) {
+		for (String key : keys) {
+			Object value = configuration.get(key);
+			if (bootDefault.equals(value) || bootDefault.getName().equals(value)) {
+				configuration.remove(key);
+			}
+		}
 	}
 
 	private void filterStreamManagedConfiguration(Map<String, Object> configuration) {

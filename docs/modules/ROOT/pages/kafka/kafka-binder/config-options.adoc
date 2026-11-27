@@ -4,6 +4,19 @@ This section contains the configuration options used by the Apache Kafka binder.
 
 For common configuration options and properties pertaining to the binder, see the xref:spring-cloud-stream/binding-properties.adoc[binding properties] in core documentation.
 
+[[kafka-binder-and-spring-kafka-properties]]
+== Kafka Binder and `spring.kafka` Properties
+
+The binder builds its clients from the `spring.kafka` properties of Spring Boot, overlaid with the binder properties described below.
+Adding the Kafka binder to an application does not change the `spring.kafka` defaults for other Kafka users in the same application, such as `@KafkaListener` methods or an auto-configured `KafkaTemplate`: they keep Spring Boot's defaults (for example, `String` (de)serializers).
+
+The binder itself always works with `byte[]` keys and values and converts them through message converters.
+It therefore ignores `String` (de)serializers that come from the Spring Boot defaults.
+Any other (de)serializer that you set explicitly through `spring.kafka.consumer.*-deserializer` or `spring.kafka.producer.*-serializer` is still passed on to the binder's clients.
+
+NOTE: Earlier versions set the `spring.kafka` consumer and producer (de)serializers to the `byte[]` ones for the whole application.
+If you relied on that, for example by sending `byte[]` values with an auto-configured `KafkaTemplate`, set `spring.kafka.producer.value-serializer` (and the other properties you need) explicitly.
+
 [[kafka-binder-properties]]
 == Kafka Binder Properties
 
