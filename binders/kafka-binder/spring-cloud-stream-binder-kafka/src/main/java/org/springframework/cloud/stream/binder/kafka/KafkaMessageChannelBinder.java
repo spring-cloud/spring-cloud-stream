@@ -1806,45 +1806,34 @@ public class KafkaMessageChannelBinder extends
 					.append(keyOrValue(value))
 					.append("'").append(" received from ")
 					.append(consumerRecord.partition());
-			CompletableFuture<SendResult<K, V>> sentDlq = null;
 			try {
-				sentDlq = this.kafkaTemplate.send(producerRecord);
-				sentDlq.whenComplete((result, ex) -> {
-					if (ex != null) {
-						KafkaMessageChannelBinder.this.logger.error("Error sending to DLQ " + sb, ex);
-					}
-					else {
-						if (KafkaMessageChannelBinder.this.logger.isDebugEnabled()) {
-							KafkaMessageChannelBinder.this.logger.debug("Sent to DLQ " + sb + ": " + result.getRecordMetadata());
-						}
-					}
-				});
-				try {
-					sentDlq.get(this.sendTimeout, TimeUnit.MILLISECONDS);
+				CompletableFuture<SendResult<K, V>> sentDlq = this.kafkaTemplate.send(producerRecord);
+				SendResult<K, V> sendResult = sentDlq.get(this.sendTimeout, TimeUnit.MILLISECONDS);
+				if (KafkaMessageChannelBinder.this.logger.isDebugEnabled()) {
+					KafkaMessageChannelBinder.this.logger.debug("Sent to DLQ " + sb + ": " + sendResult.getRecordMetadata());
 				}
-				catch (InterruptedException ex) {
-					Thread.currentThread().interrupt();
-					throw ex;
-				}
+			}
+			catch (InterruptedException ex) {
+				Thread.currentThread().interrupt();
+				throw new IllegalStateException("Interrupted while sending record to DLQ " + sb, ex);
 			}
 			catch (Exception ex) {
-				KafkaMessageChannelBinder.this.logger
-						.error("Error sending to DLQ " + sb.toString(), ex);
+				KafkaMessageChannelBinder.this.logger.error("Error sending to DLQ " + sb, ex);
+				throw new IllegalStateException("Failed to send record to DLQ " + sb, ex);
 			}
-			finally {
-				if (ackMode == ContainerProperties.AckMode.MANUAL
-						|| ackMode == ContainerProperties.AckMode.MANUAL_IMMEDIATE) {
-					Acknowledgment acknowledgment = messageHeaders.get(KafkaHeaders.ACKNOWLEDGMENT, Acknowledgment.class);
-					if (acknowledgment != null) {
-						acknowledgment.acknowledge();
-					}
-					else {
-						// Can happen when the error message does not carry the original
-						// message's headers (e.g. no original message available), so the
-						// Acknowledgment is not reachable here; log instead of throwing an NPE.
-						KafkaMessageChannelBinder.this.logger.warn("No Acknowledgment header available; "
-								+ "could not acknowledge the record sent to DLQ " + sb);
-					}
+
+			if (ackMode == ContainerProperties.AckMode.MANUAL
+					|| ackMode == ContainerProperties.AckMode.MANUAL_IMMEDIATE) {
+				Acknowledgment acknowledgment = messageHeaders.get(KafkaHeaders.ACKNOWLEDGMENT, Acknowledgment.class);
+				if (acknowledgment != null) {
+					acknowledgment.acknowledge();
+				}
+				else {
+					// Can happen when the error message does not carry the original
+					// message's headers (e.g. no original message available), so the
+					// Acknowledgment is not reachable here; log instead of throwing an NPE.
+					KafkaMessageChannelBinder.this.logger.warn("No Acknowledgment header available; "
+							+ "could not acknowledge the record sent to DLQ " + sb);
 				}
 			}
 		}
