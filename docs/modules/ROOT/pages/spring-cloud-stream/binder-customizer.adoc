@@ -10,16 +10,13 @@ The user must check for the binder type and then apply the necessary customizati
 
 Here is an example of providing a `BinderCustomizer` bean.
 
-[source, java]
+[source,java]
 ----
 @Bean
 public BinderCustomizer binderCustomizer() {
     return (binder, binderName) -> {
         if (binder instanceof KafkaMessageChannelBinder kafkaMessageChannelBinder) {
             kafkaMessageChannelBinder.setRebalanceListener(...);
-        }
-        else if (binder instanceof KStreamBinder) {
-            ...
         }
         else if (binder instanceof RabbitMessageChannelBinder) {
             ...

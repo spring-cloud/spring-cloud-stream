@@ -12,7 +12,7 @@ public Function<String, String> uppercase() {
 	return v -> v.toUpperCase();
 }
 ----
-there are two bindings named `uppercase-in-0` for input and `uppercase-out-0` for output. See <<Binding and Binding names>> for more details.
+there are two bindings named `uppercase-in-0` for input and `uppercase-out-0` for output. See xref:spring-cloud-stream/binding-names.adoc[] for more details.
 
 NOTE: To avoid repetition, Spring Cloud Stream supports setting values for all bindings, in the format of `spring.cloud.stream.default.<property>=<value>`
 and `spring.cloud.stream.default.<producer|consumer>.<property>=<value>` for common binding properties.
@@ -42,12 +42,12 @@ See xref:spring-cloud-stream/consumer-groups.adoc[Consumer Groups].
 Default: `null` (indicating an anonymous consumer).
 contentType::
 The content type of this binding.
-See `xref:spring-cloud-stream/binding-properties.adoc#content-type-management[Content Type Negotiation]`.
+See xref:spring-cloud-stream/content-type.adoc[Content Type Negotiation].
 +
 Default: `application/json`.
 binder::
 The binder used by this binding.
-See `xref:spring-cloud-stream/multiple-binders.adoc[Multiple Binders on the Classpath]` for details.
+See xref:spring-cloud-stream/multiple-binders.adoc[Multiple Binders on the Classpath] for details.
 +
 Default: `null` (the default binder is used, if it exists).
 
@@ -234,7 +234,7 @@ Default: false.
 [[advanced-producer-configuration]]
 == Advanced Producer Configuration
 
-In some cases Producer Properties are not enough to properly configure a producing MessageHandler in the binder, or may be you prefer a programmatic approach 
+In some cases Producer Properties are not enough to properly configure a producing MessageHandler in the binder, or may be you prefer a programmatic approach
 while configuring such producing MessageHandler. Regardless of the reason, spring-cloud-stream provides `ProducerMessageHandlerCustomizer` to accomplish it.
 
 

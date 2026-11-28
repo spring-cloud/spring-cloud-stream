@@ -1,4 +1,4 @@
-[[content_type_management]]
+[[content-type-management]]
 = Content Type Negotiation
 
 Data transformation is one of the core features of any message-driven microservice architecture. Given that, in Spring Cloud Stream, such data

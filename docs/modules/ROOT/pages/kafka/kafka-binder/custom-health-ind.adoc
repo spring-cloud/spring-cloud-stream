@@ -92,7 +92,8 @@ The bean is only registered as an ordinary health indicator of the application.
 
 To provide a custom health indicator for a particular binder, declare the `KafkaBinderHealth` bean in a configuration class and add that class to the context of the binder with `spring.main.sources`, which you set in the `environment` of the binder.
 
-```
+[source,java]
+----
 @Configuration
 public class Kafka1HealthConfiguration {
 
@@ -101,13 +102,14 @@ public class Kafka1HealthConfiguration {
 		return new KafkaBinderHealthImplementation(...);
 	}
 }
-```
+----
 
-```
+[source,properties]
+----
 spring.cloud.stream.binders.kafka1.type=kafka
 spring.cloud.stream.binders.kafka1.environment.spring.main.sources=com.example.Kafka1HealthConfiguration
 spring.cloud.stream.binders.kafka2.type=kafka
-```
+----
 
 Do not annotate this class so that it is component scanned by the application, otherwise the bean is registered in the application context as well.
 In this example only the `kafka1` binder uses the custom health indicator, while `kafka2` keeps the default one.
