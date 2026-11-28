@@ -78,6 +78,7 @@ import org.springframework.messaging.converter.StringMessageConverter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -618,6 +619,60 @@ class KafkaBinderUnitTests {
 				Collections.singletonMap(KafkaHeaders.ACKNOWLEDGMENT, acknowledgment));
 
 		invokeSendToDlq(dlqSender, consumerRecord, headersWithAcknowledgment, ContainerProperties.AckMode.RECORD);
+
+		verify(acknowledgment, never()).acknowledge();
+	}
+
+	/*
+	 * GH-3350: a failed DLQ publication must fail recovery and must not acknowledge
+	 * the original record in manual acknowledgment modes.
+	 */
+	@SuppressWarnings("unchecked")
+	@Test
+	void sendToDlqDoesNotAcknowledgeWhenDlqPublicationFails() throws Exception {
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
+				new KafkaBinderConfigurationProperties(new TestKafkaProperties(), mock(ObjectProvider.class)),
+				mock(KafkaTopicProvisioner.class));
+
+		KafkaTemplate<byte[], byte[]> kafkaTemplate = mock(KafkaTemplate.class);
+		given(kafkaTemplate.send(any(org.apache.kafka.clients.producer.ProducerRecord.class)))
+				.willReturn(CompletableFuture.failedFuture(new IllegalStateException("DLQ unavailable")));
+
+		Object dlqSender = newDlqSender(binder, kafkaTemplate, 10_000L);
+		ConsumerRecord<Object, Object> consumerRecord = new ConsumerRecord<>("topic", 0, 0L, "key", "value");
+		Acknowledgment acknowledgment = mock(Acknowledgment.class);
+		MessageHeaders headers = new MessageHeaders(
+				Collections.singletonMap(KafkaHeaders.ACKNOWLEDGMENT, acknowledgment));
+
+		assertThatThrownBy(() -> invokeSendToDlq(dlqSender, consumerRecord, headers,
+				ContainerProperties.AckMode.MANUAL_IMMEDIATE))
+				.isInstanceOf(IllegalStateException.class)
+				.hasMessageContaining("Failed to send record to DLQ");
+
+		verify(acknowledgment, never()).acknowledge();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	void sendToDlqPropagatesSynchronousPublicationFailure() throws Exception {
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
+				new KafkaBinderConfigurationProperties(new TestKafkaProperties(), mock(ObjectProvider.class)),
+				mock(KafkaTopicProvisioner.class));
+
+		KafkaTemplate<byte[], byte[]> kafkaTemplate = mock(KafkaTemplate.class);
+		given(kafkaTemplate.send(any(org.apache.kafka.clients.producer.ProducerRecord.class)))
+				.willThrow(new IllegalStateException("Producer unavailable"));
+
+		Object dlqSender = newDlqSender(binder, kafkaTemplate, 10_000L);
+		ConsumerRecord<Object, Object> consumerRecord = new ConsumerRecord<>("topic", 0, 0L, "key", "value");
+		Acknowledgment acknowledgment = mock(Acknowledgment.class);
+		MessageHeaders headers = new MessageHeaders(
+				Collections.singletonMap(KafkaHeaders.ACKNOWLEDGMENT, acknowledgment));
+
+		assertThatThrownBy(() -> invokeSendToDlq(dlqSender, consumerRecord, headers,
+				ContainerProperties.AckMode.MANUAL))
+				.isInstanceOf(IllegalStateException.class)
+				.hasMessageContaining("Failed to send record to DLQ");
 
 		verify(acknowledgment, never()).acknowledge();
 	}
