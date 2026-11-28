@@ -17,7 +17,7 @@ The key represents an identifying name for the binder implementation, whereas th
 Binder selection can either be performed globally, using the `spring.cloud.stream.defaultBinder` property (for example, `spring.cloud.stream.defaultBinder=rabbit`) or individually, by configuring the binder on each binding.
 For instance, a processor application (that has bindings named `input` and `output` for read and write respectively) that reads from Kafka and writes to RabbitMQ can specify the following configuration:
 
-[source]
+[source,properties]
 ----
 spring.cloud.stream.bindings.input.binder=kafka
 spring.cloud.stream.bindings.output.binder=rabbit

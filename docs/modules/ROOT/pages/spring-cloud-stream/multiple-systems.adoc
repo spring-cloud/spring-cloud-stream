@@ -12,7 +12,7 @@ This denotes a configuration that exists independently of the default binder con
 
 The following example shows a typical configuration for a processor application that connects to two RabbitMQ broker instances:
 
-[source,yml]
+[source,yaml]
 ----
 spring:
   cloud:
